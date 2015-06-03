@@ -10,6 +10,6 @@ class Game(db.Model):
     def __init__(self, title=None, game_rounds=10):
         self.title = title
         self.game_rounds = game_rounds
-
+        
     def __repr__(self):
         return 'Game(title=%s, game_rounds=%d)' % (self.title, self.game_rounds)
