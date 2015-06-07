@@ -8,6 +8,9 @@ import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import de.medieninf.mobcomp.challenges.R;
 
 /**
@@ -47,20 +50,50 @@ public class GameService extends Service {
         return this.userToken != null;
     }
 
+    public String getUserToken() {
+        return userToken;
+    }
+
     public void submitUserRegistration(String username) {
         // TODO: do webrequest async and broadcast result
         // sending failed broadcast here for example
+        String url = getString(R.string.constant_server_url) + "/users";
 
-        Intent broadcastIntent = new Intent(BROADCAST_USER_REGISTERED);
-        // adding a flag that auth was unsuccessful
-        broadcastIntent.putExtra(BROADCAST_USER_REGISTERED_SUCCESSFULLY_EXTRA, false);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
+        SubmitUserTask submitUserTask = new SubmitUserTask(username, new WebRequestListener() {
+            @Override
+            public void requestFinished(JSONObject jsonObject) {
+                boolean saveSuccessful = setUserTokenFromJson(jsonObject);
+                Intent broadcastIntent = new Intent(BROADCAST_USER_REGISTERED);
+                broadcastIntent.putExtra(BROADCAST_USER_REGISTERED_SUCCESSFULLY_EXTRA, saveSuccessful);
+                LocalBroadcastManager.getInstance(GameService.this).sendBroadcast(broadcastIntent);
+            }
+        });
+        submitUserTask.execute(url);
     }
 
     private String getUserTokenFromPreferences() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         String prefUserToken = sharedPreferences.getString(getString(R.string.constant_usertoken), null);
         return prefUserToken;
+    }
+
+    private boolean setUserTokenFromJson(JSONObject jsonObject) {
+        if (jsonObject == null) {
+            return false;
+        }
+        try {
+            String userToken = jsonObject.getString("token");
+            if (userToken.trim().isEmpty()) {
+                return false;
+            }
+
+            SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+            sharedPreferences.edit().putString(getString(R.string.constant_usertoken), userToken).apply();
+            this.userToken = userToken;
+            return true;
+        } catch (JSONException e) {
+            return false;
+        }
     }
 
 

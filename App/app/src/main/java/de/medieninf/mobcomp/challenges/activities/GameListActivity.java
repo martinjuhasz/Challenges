@@ -8,6 +8,7 @@ import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -16,6 +17,9 @@ import de.medieninf.mobcomp.challenges.services.GameService;
 
 
 public class GameListActivity extends Activity {
+
+    //instance variables
+    final static String TAG = GameListActivity.class.getSimpleName();
 
     // Services
     private boolean gameServiceFound;
@@ -83,8 +87,8 @@ public class GameListActivity extends Activity {
             Intent loginIntent = new Intent(this, LoginActivity.class);
             startActivity(loginIntent);
             finish();
+        } else {
+            Log.i(TAG, "token: " + gameService.getUserToken());
         }
     }
-
-
 }

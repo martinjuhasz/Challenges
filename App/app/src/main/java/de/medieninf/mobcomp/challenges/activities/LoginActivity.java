@@ -26,6 +26,7 @@ public class LoginActivity extends Activity {
     final static String TAG = LoginActivity.class.getSimpleName();
     private EditText usernameEditText;
     private Button submitButton;
+    private boolean isSubmitting;
 
     // Services
     private boolean gameServiceFound;
@@ -40,6 +41,8 @@ public class LoginActivity extends Activity {
         setContentView(R.layout.activity_login);
         usernameEditText = (EditText)findViewById(R.id.et_login_username);
         submitButton = (Button)findViewById(R.id.bt_login_submit);
+
+        isSubmitting = false;
 
         submitButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -87,7 +90,7 @@ public class LoginActivity extends Activity {
     }
 
     private void submitClicked() {
-        if (gameService == null) {
+        if (gameService == null || isSubmitting) {
             return;
         }
 
@@ -97,14 +100,24 @@ public class LoginActivity extends Activity {
             return;
         }
 
+        isSubmitting = true;
+        submitButton.setEnabled(false);
         gameService.submitUserRegistration(username);
     }
 
     private void gameBroadcastReceived(Intent intent) {
         String action = intent.getAction();
         if (action.equals(GameService.BROADCAST_USER_REGISTERED)) {
+            isSubmitting = false;
+            submitButton.setEnabled(true);
             boolean registeredSuccessfull = intent.getExtras().getBoolean(GameService.BROADCAST_USER_REGISTERED_SUCCESSFULLY_EXTRA);
             Log.i(TAG, "registration status: " + registeredSuccessfull);
+
+            if (registeredSuccessfull) {
+                Intent gameListIntent = new Intent(this, GameListActivity.class);
+                startActivity(gameListIntent);
+                finish();
+            }
         }
     }
 
