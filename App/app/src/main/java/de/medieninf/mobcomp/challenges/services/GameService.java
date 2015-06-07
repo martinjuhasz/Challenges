@@ -12,6 +12,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import de.medieninf.mobcomp.challenges.R;
+import de.medieninf.mobcomp.challenges.services.api.ApiService;
+import de.medieninf.mobcomp.challenges.services.api.ApiServiceCallback;
+import de.medieninf.mobcomp.challenges.services.api.tasks.SubmitApiRequestTask;
 
 /**
  * Created by Martin Juhasz on 06/06/15.
@@ -32,6 +35,7 @@ public class GameService extends Service {
     // instance variables
     private IBinder binder;
     private String userToken;
+    private ApiService apiService;
 
     @Override
     public void onCreate() {
@@ -39,6 +43,7 @@ public class GameService extends Service {
 
         this.binder = new GameServiceBinder();
         this.userToken = getUserTokenFromPreferences();
+        this.apiService = new ApiService(getString(R.string.constant_server_url));
     }
 
     @Override
@@ -55,20 +60,24 @@ public class GameService extends Service {
     }
 
     public void submitUserRegistration(String username) {
-        // TODO: do webrequest async and broadcast result
-        // sending failed broadcast here for example
-        String url = getString(R.string.constant_server_url) + "/users";
 
-        SubmitUserTask submitUserTask = new SubmitUserTask(username, new WebRequestListener() {
+        apiService.createUser(username, new ApiServiceCallback() {
+
             @Override
-            public void requestFinished(JSONObject jsonObject) {
-                boolean saveSuccessful = setUserTokenFromJson(jsonObject);
+            public void requestFinished(String returnBody, boolean successfully, ApiService.ErrorCode errorCode) {
                 Intent broadcastIntent = new Intent(BROADCAST_USER_REGISTERED);
+
+                if (!successfully) {
+                    broadcastIntent.putExtra(BROADCAST_USER_REGISTERED_SUCCESSFULLY_EXTRA, false);
+                    LocalBroadcastManager.getInstance(GameService.this).sendBroadcast(broadcastIntent);
+                    return;
+                }
+
+                boolean saveSuccessful = setUserTokenFromString(returnBody);
                 broadcastIntent.putExtra(BROADCAST_USER_REGISTERED_SUCCESSFULLY_EXTRA, saveSuccessful);
                 LocalBroadcastManager.getInstance(GameService.this).sendBroadcast(broadcastIntent);
             }
         });
-        submitUserTask.execute(url);
     }
 
     private String getUserTokenFromPreferences() {
@@ -77,11 +86,12 @@ public class GameService extends Service {
         return prefUserToken;
     }
 
-    private boolean setUserTokenFromJson(JSONObject jsonObject) {
-        if (jsonObject == null) {
+    private boolean setUserTokenFromString(String jsonString) {
+        if (jsonString == null) {
             return false;
         }
         try {
+            JSONObject jsonObject = new JSONObject(jsonString);
             String userToken = jsonObject.getString("token");
             if (userToken.trim().isEmpty()) {
                 return false;
