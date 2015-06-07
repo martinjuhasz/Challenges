@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from flask import Flask
+from flask import request, jsonify
 from flask.ext.sqlalchemy import SQLAlchemy
 import flask.ext.restless
+from sqlalchemy import exc
 
 
 app = Flask(__name__)
@@ -18,12 +20,29 @@ from challenges.models.db.challenge_type import ChallengeType
 
 manager = flask.ext.restless.APIManager(app, flask_sqlalchemy_db=db)
 manager.create_api(Game, methods=['GET', 'POST', 'DELETE'])
+manager.create_api(Challenge, methods=['GET', 'POST', 'DELETE'])
 
 @app.route('/games')
 def games():
     games = Game.query.all()
     print games
     return str(games)
+
+
+@app.route('/users', methods=['POST'])
+def create_user():
+    request_json = request.get_json(force=True, silent=True)
+    if not request_json or not request_json['username']:
+        return "", 400
+
+    try:
+        user = User(username=request_json['username'])
+        db.session.add(user)
+        db.session.commit()
+    except exc.IntegrityError:
+        return jsonify({'error': "username already taken"})
+
+    return jsonify({'token': user.token})
 
 
 @app.route('/fill_db')
