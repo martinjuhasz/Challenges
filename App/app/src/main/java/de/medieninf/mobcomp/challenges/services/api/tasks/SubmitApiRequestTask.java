@@ -20,12 +20,12 @@ public class SubmitApiRequestTask extends AsyncTask<String, Long, String> {
         DELETE
     }
 
-    private final ApiServiceCallback callback;
+    private final ApiRequestTaskCallback callback;
     private final RequestType requestType;
     private final String payload;
     private boolean finishedSuccessfully;
 
-    public SubmitApiRequestTask(String payload, RequestType submitType, ApiServiceCallback callback) {
+    public SubmitApiRequestTask(String payload, RequestType submitType, ApiRequestTaskCallback callback) {
         this.callback = callback;
         this.requestType = submitType;
         this.payload = payload;
@@ -76,7 +76,7 @@ public class SubmitApiRequestTask extends AsyncTask<String, Long, String> {
     @Override
     protected void onPostExecute(String returnBody) {
         if (this.callback != null) {
-            this.callback.requestFinished(returnBody, this.finishedSuccessfully, null);
+            this.callback.requestFinished(returnBody, this.finishedSuccessfully);
         }
     }
 }

@@ -5,8 +5,8 @@ import org.json.JSONObject;
 /**
  * Created by Martin Juhasz on 07/06/15.
  */
-public abstract class ApiServiceCallback {
+public abstract class ApiServiceCallback<ReturnType> {
 
-    public void requestFinished(String returnBody, boolean successfully, ApiService.ErrorCode errorCode) {}
+    public void requestFinished(ReturnType returnBody, ApiService.ErrorCode errorCode) {}
 
 }

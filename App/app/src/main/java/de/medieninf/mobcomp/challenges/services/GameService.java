@@ -7,6 +7,7 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -33,6 +34,7 @@ public class GameService extends Service {
     public static final String BROADCAST_USER_REGISTERED_SUCCESSFULLY_EXTRA = "BROADCAST_USER_REGISTERED_SUCCESSFULLY_EXTRA";
 
     // instance variables
+    final static String TAG = GameService.class.getSimpleName();
     private IBinder binder;
     private String userToken;
     private ApiService apiService;
@@ -61,19 +63,19 @@ public class GameService extends Service {
 
     public void submitUserRegistration(String username) {
 
-        apiService.createUser(username, new ApiServiceCallback() {
-
+        apiService.createUser(username, new ApiServiceCallback<JSONObject>() {
             @Override
-            public void requestFinished(String returnBody, boolean successfully, ApiService.ErrorCode errorCode) {
+            public void requestFinished(JSONObject returnBody, ApiService.ErrorCode errorCode) {
                 Intent broadcastIntent = new Intent(BROADCAST_USER_REGISTERED);
 
-                if (!successfully) {
+                if (errorCode != null) {
+                    Log.d(TAG, "Request failed. Error Code: " + errorCode);
                     broadcastIntent.putExtra(BROADCAST_USER_REGISTERED_SUCCESSFULLY_EXTRA, false);
                     LocalBroadcastManager.getInstance(GameService.this).sendBroadcast(broadcastIntent);
                     return;
                 }
 
-                boolean saveSuccessful = setUserTokenFromString(returnBody);
+                boolean saveSuccessful = setUserTokenFromJson(returnBody);
                 broadcastIntent.putExtra(BROADCAST_USER_REGISTERED_SUCCESSFULLY_EXTRA, saveSuccessful);
                 LocalBroadcastManager.getInstance(GameService.this).sendBroadcast(broadcastIntent);
             }
@@ -86,17 +88,18 @@ public class GameService extends Service {
         return prefUserToken;
     }
 
-    private boolean setUserTokenFromString(String jsonString) {
-        if (jsonString == null) {
+    private boolean setUserTokenFromJson(JSONObject jsonObject) {
+        if (jsonObject == null) {
             return false;
         }
-        try {
-            JSONObject jsonObject = new JSONObject(jsonString);
-            String userToken = jsonObject.getString("token");
-            if (userToken.trim().isEmpty()) {
-                return false;
-            }
 
+        if (!jsonObject.has("token")) {
+            return false;
+        }
+
+        String userToken = null;
+        try {
+            userToken = jsonObject.getString("token");
             SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
             sharedPreferences.edit().putString(getString(R.string.constant_usertoken), userToken).apply();
             this.userToken = userToken;
