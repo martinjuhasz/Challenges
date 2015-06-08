@@ -1,7 +1,5 @@
 package de.medieninf.mobcomp.challenges.services.api.tasks;
 
-import de.medieninf.mobcomp.challenges.services.api.ApiService;
-
 /**
  * Created by Martin Juhasz on 07/06/15.
  */

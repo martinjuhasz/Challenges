@@ -9,13 +9,9 @@ import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import de.medieninf.mobcomp.challenges.R;
 import de.medieninf.mobcomp.challenges.services.api.ApiService;
 import de.medieninf.mobcomp.challenges.services.api.ApiServiceCallback;
-import de.medieninf.mobcomp.challenges.services.api.tasks.SubmitApiRequestTask;
 
 /**
  * Created by Martin Juhasz on 06/06/15.
@@ -29,9 +25,10 @@ public class GameService extends Service {
         }
     }
 
-    // broadcasts
+    // statics
     public static final String BROADCAST_USER_REGISTERED = "de.medieninf.mobcomp.challenges.broadcast.user_registered";
     public static final String BROADCAST_USER_REGISTERED_SUCCESSFULLY_EXTRA = "BROADCAST_USER_REGISTERED_SUCCESSFULLY_EXTRA";
+    public static final String TOKEN_KEY = "constant_usertoken";
 
     // instance variables
     final static String TAG = GameService.class.getSimpleName();
@@ -45,7 +42,7 @@ public class GameService extends Service {
 
         this.binder = new GameServiceBinder();
         this.userToken = getUserTokenFromPreferences();
-        this.apiService = new ApiService(getString(R.string.constant_server_url));
+        this.apiService = new ApiService(getString(R.string.constant_server_url), this);
     }
 
     @Override
@@ -62,9 +59,9 @@ public class GameService extends Service {
     }
 
     public void submitUserRegistration(String username) {
-
+        /*
         apiService.createUser(username, new ApiServiceCallback<JSONObject>() {
-            @Override
+                @Override
             public void requestFinished(JSONObject returnBody, ApiService.ErrorCode errorCode) {
                 Intent broadcastIntent = new Intent(BROADCAST_USER_REGISTERED);
 
@@ -80,33 +77,32 @@ public class GameService extends Service {
                 LocalBroadcastManager.getInstance(GameService.this).sendBroadcast(broadcastIntent);
             }
         });
+        */
+        apiService.createUser(username, new ApiServiceCallback() {
+            @Override
+            public void requestFinished() {
+                GameService.this.userToken = getUserTokenFromPreferences();
+
+                Intent broadcastIntent = new Intent(BROADCAST_USER_REGISTERED);
+                broadcastIntent.putExtra(BROADCAST_USER_REGISTERED_SUCCESSFULLY_EXTRA, true);
+                LocalBroadcastManager.getInstance(GameService.this).sendBroadcast(broadcastIntent);
+            }
+
+            @Override
+            public void requestFailed(ApiService.ErrorCode errorCode) {
+                Log.i(TAG, "request failed: " + errorCode);
+
+                Intent broadcastIntent = new Intent(BROADCAST_USER_REGISTERED);
+                broadcastIntent.putExtra(BROADCAST_USER_REGISTERED_SUCCESSFULLY_EXTRA, false);
+                LocalBroadcastManager.getInstance(GameService.this).sendBroadcast(broadcastIntent);
+            }
+        });
     }
 
     private String getUserTokenFromPreferences() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-        String prefUserToken = sharedPreferences.getString(getString(R.string.constant_usertoken), null);
+        String prefUserToken = sharedPreferences.getString(TOKEN_KEY, null);
         return prefUserToken;
-    }
-
-    private boolean setUserTokenFromJson(JSONObject jsonObject) {
-        if (jsonObject == null) {
-            return false;
-        }
-
-        if (!jsonObject.has("token")) {
-            return false;
-        }
-
-        String userToken = null;
-        try {
-            userToken = jsonObject.getString("token");
-            SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-            sharedPreferences.edit().putString(getString(R.string.constant_usertoken), userToken).apply();
-            this.userToken = userToken;
-            return true;
-        } catch (JSONException e) {
-            return false;
-        }
     }
 
 
