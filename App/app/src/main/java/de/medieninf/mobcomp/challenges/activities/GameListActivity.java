@@ -83,11 +83,12 @@ public class GameListActivity extends Activity {
         }
 
         if (!gameService.isUserLoggedIn()) {
+            Log.i(TAG, "checkLogin: unregistered");
             Intent loginIntent = new Intent(this, LoginActivity.class);
             startActivity(loginIntent);
             finish();
         } else {
-            Log.i(TAG, "token: " + gameService.getUserToken());
+            Log.i(TAG, "checkLogin: registered");
         }
     }
 }

@@ -9,9 +9,14 @@ import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 import de.medieninf.mobcomp.challenges.R;
-import de.medieninf.mobcomp.challenges.services.api.ApiService;
-import de.medieninf.mobcomp.challenges.services.api.ApiServiceCallback;
+import de.medieninf.mobcomp.challenges.services.api.ApiHandler;
+import de.medieninf.mobcomp.challenges.services.api.ApiHandlerCallback;
 
 /**
  * Created by Martin Juhasz on 06/06/15.
@@ -26,15 +31,14 @@ public class GameService extends Service {
     }
 
     // statics
-    public static final String BROADCAST_USER_REGISTERED = "de.medieninf.mobcomp.challenges.broadcast.user_registered";
-    public static final String BROADCAST_USER_REGISTERED_SUCCESSFULLY_EXTRA = "BROADCAST_USER_REGISTERED_SUCCESSFULLY_EXTRA";
     public static final String TOKEN_KEY = "constant_usertoken";
 
     // instance variables
     final static String TAG = GameService.class.getSimpleName();
     private IBinder binder;
     private String userToken;
-    private ApiService apiService;
+    private ApiHandler apiHandler;
+    private List<WeakReference<GameServiceListener>> listeners;
 
     @Override
     public void onCreate() {
@@ -42,7 +46,48 @@ public class GameService extends Service {
 
         this.binder = new GameServiceBinder();
         this.userToken = getUserTokenFromPreferences();
-        this.apiService = new ApiService(getString(R.string.constant_server_url), this);
+        this.apiHandler = new ApiHandler(getString(R.string.constant_server_url), this);
+        this.listeners = new ArrayList<>();
+    }
+
+    public void addListener(GameServiceListener listener) {
+        // test if listener already in list
+        for (Iterator<WeakReference<GameServiceListener>> iterator = this.listeners.iterator(); iterator.hasNext();) {
+            WeakReference<GameServiceListener> weakRef = iterator.next();
+            if (weakRef.get() == listener) {
+                return;
+            }
+        }
+
+        this.listeners.add(new WeakReference<GameServiceListener>(listener));
+    }
+
+
+    public void removeListener(GameServiceListener listener) {
+        // test if listener is in list
+        for (Iterator<WeakReference<GameServiceListener>> iterator = this.listeners.iterator(); iterator.hasNext();) {
+            WeakReference<GameServiceListener> weakRef = iterator.next();
+            // clean empty refs when already iterating
+            if (weakRef.get() == null) {
+                iterator.remove();
+            }
+            if (weakRef.get() == listener) {
+                iterator.remove();
+                return;
+            }
+        }
+    }
+
+    private void callListenerUserRegistrationUpdated(boolean successfully) {
+        for (Iterator<WeakReference<GameServiceListener>> iterator = this.listeners.iterator(); iterator.hasNext();) {
+            WeakReference<GameServiceListener> weakRef = iterator.next();
+            // clean empty refs when already iterating
+            if (weakRef.get() == null) {
+                iterator.remove();
+                continue;
+            }
+            weakRef.get().userRegistrationUpdated(successfully);
+        }
     }
 
     @Override
@@ -59,44 +104,21 @@ public class GameService extends Service {
     }
 
     public void submitUserRegistration(String username) {
-        /*
-        apiService.createUser(username, new ApiServiceCallback<JSONObject>() {
-                @Override
-            public void requestFinished(JSONObject returnBody, ApiService.ErrorCode errorCode) {
-                Intent broadcastIntent = new Intent(BROADCAST_USER_REGISTERED);
 
-                if (errorCode != null) {
-                    Log.d(TAG, "Request failed. Error Code: " + errorCode);
-                    broadcastIntent.putExtra(BROADCAST_USER_REGISTERED_SUCCESSFULLY_EXTRA, false);
-                    LocalBroadcastManager.getInstance(GameService.this).sendBroadcast(broadcastIntent);
-                    return;
-                }
-
-                boolean saveSuccessful = setUserTokenFromJson(returnBody);
-                broadcastIntent.putExtra(BROADCAST_USER_REGISTERED_SUCCESSFULLY_EXTRA, saveSuccessful);
-                LocalBroadcastManager.getInstance(GameService.this).sendBroadcast(broadcastIntent);
-            }
-        });
-        */
-        apiService.createUser(username, new ApiServiceCallback() {
+        apiHandler.createUser(username, new ApiHandlerCallback() {
             @Override
             public void requestFinished() {
                 GameService.this.userToken = getUserTokenFromPreferences();
-
-                Intent broadcastIntent = new Intent(BROADCAST_USER_REGISTERED);
-                broadcastIntent.putExtra(BROADCAST_USER_REGISTERED_SUCCESSFULLY_EXTRA, true);
-                LocalBroadcastManager.getInstance(GameService.this).sendBroadcast(broadcastIntent);
+                callListenerUserRegistrationUpdated(true);
             }
 
             @Override
-            public void requestFailed(ApiService.ErrorCode errorCode) {
+            public void requestFailed(ApiHandler.ErrorCode errorCode) {
                 Log.i(TAG, "request failed: " + errorCode);
-
-                Intent broadcastIntent = new Intent(BROADCAST_USER_REGISTERED);
-                broadcastIntent.putExtra(BROADCAST_USER_REGISTERED_SUCCESSFULLY_EXTRA, false);
-                LocalBroadcastManager.getInstance(GameService.this).sendBroadcast(broadcastIntent);
+                callListenerUserRegistrationUpdated(false);
             }
         });
+
     }
 
     private String getUserTokenFromPreferences() {

@@ -6,18 +6,18 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import de.medieninf.mobcomp.challenges.external.HttpRequest;
-import de.medieninf.mobcomp.challenges.services.api.ApiService.ErrorCode;
-import de.medieninf.mobcomp.challenges.services.api.ApiServiceCallback;
+import de.medieninf.mobcomp.challenges.services.api.ApiHandler.ErrorCode;
+import de.medieninf.mobcomp.challenges.services.api.ApiHandlerCallback;
 
 /**
  * Created by Martin Juhasz on 08/06/15.
  */
-public abstract class ApiServiceAsyncTask extends AsyncTask<Void, Long, Void> {
+public abstract class ApiHandlerAsyncTask extends AsyncTask<Void, Long, Void> {
 
-    private final ApiServiceCallback callback;
+    private final ApiHandlerCallback callback;
     private ErrorCode errorCode;
 
-    public ApiServiceAsyncTask(ApiServiceCallback callback) {
+    public ApiHandlerAsyncTask(ApiHandlerCallback callback) {
         this.callback = callback;
         this.errorCode = null;
     }
@@ -46,7 +46,7 @@ public abstract class ApiServiceAsyncTask extends AsyncTask<Void, Long, Void> {
                 }
 
                 this.errorCode = getErrorCode(jsonObject);
-                if(this.errorCode != null) {
+                if(this.errorCode == null) {
                     boolean received = onDataReceived(jsonObject);
                     if (!received) {
                         this.errorCode = ErrorCode.UNKNOWN;

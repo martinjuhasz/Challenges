@@ -17,11 +17,12 @@ import android.widget.EditText;
 
 import de.medieninf.mobcomp.challenges.R;
 import de.medieninf.mobcomp.challenges.services.GameService;
+import de.medieninf.mobcomp.challenges.services.GameServiceListener;
 
 /**
  * Created by Martin Juhasz on 06/06/15.
  */
-public class LoginActivity extends Activity {
+public class LoginActivity extends Activity implements GameServiceListener {
 
     final static String TAG = LoginActivity.class.getSimpleName();
     private EditText usernameEditText;
@@ -32,7 +33,6 @@ public class LoginActivity extends Activity {
     private boolean gameServiceFound;
     private GameService gameService;
     private ServiceConnection gameServiceConnection;
-    private BroadcastReceiver gameServiceBroadcastReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +56,7 @@ public class LoginActivity extends Activity {
             @Override
             public void onServiceConnected(ComponentName name, IBinder service) {
                 gameService = ((GameService.GameServiceBinder)service).getService();
+                gameService.addListener(LoginActivity.this);
             }
             @Override
             public void onServiceDisconnected(ComponentName name) {
@@ -65,15 +66,6 @@ public class LoginActivity extends Activity {
         };
         Intent gameServiceIntent = new Intent(this, GameService.class);
         gameServiceFound = bindService(gameServiceIntent, gameServiceConnection, Context.BIND_AUTO_CREATE);
-
-        gameServiceBroadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                gameBroadcastReceived(intent);
-            }
-        };
-        IntentFilter filter = new IntentFilter(GameService.BROADCAST_USER_REGISTERED);
-        LocalBroadcastManager.getInstance(this).registerReceiver(gameServiceBroadcastReceiver, filter);
     }
 
     @Override
@@ -85,8 +77,6 @@ public class LoginActivity extends Activity {
             gameService = null;
             unbindService(gameServiceConnection);
         }
-
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(gameServiceBroadcastReceiver);
     }
 
     private void submitClicked() {
@@ -105,20 +95,16 @@ public class LoginActivity extends Activity {
         gameService.submitUserRegistration(username);
     }
 
-    private void gameBroadcastReceived(Intent intent) {
-        String action = intent.getAction();
-        if (action.equals(GameService.BROADCAST_USER_REGISTERED)) {
-            isSubmitting = false;
-            submitButton.setEnabled(true);
-            boolean registeredSuccessfull = intent.getExtras().getBoolean(GameService.BROADCAST_USER_REGISTERED_SUCCESSFULLY_EXTRA);
-            Log.i(TAG, "registration status: " + registeredSuccessfull);
+    @Override
+    public void userRegistrationUpdated(boolean successfully) {
+        isSubmitting = false;
+        submitButton.setEnabled(true);
+        Log.i(TAG, "registration status: " + successfully);
 
-            if (registeredSuccessfull) {
-                Intent gameListIntent = new Intent(this, GameListActivity.class);
-                startActivity(gameListIntent);
-                finish();
-            }
+        if (successfully) {
+            Intent gameListIntent = new Intent(this, GameListActivity.class);
+            startActivity(gameListIntent);
+            finish();
         }
     }
-
 }

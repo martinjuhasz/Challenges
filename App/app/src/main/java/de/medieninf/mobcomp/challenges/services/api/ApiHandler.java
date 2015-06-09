@@ -9,12 +9,12 @@ import org.json.JSONObject;
 
 import de.medieninf.mobcomp.challenges.external.HttpRequest;
 import de.medieninf.mobcomp.challenges.services.GameService;
-import de.medieninf.mobcomp.challenges.services.api.tasks.ApiServiceAsyncTask;
+import de.medieninf.mobcomp.challenges.services.api.tasks.ApiHandlerAsyncTask;
 
 /**
  * Created by Martin Juhasz on 07/06/15.
  */
-public class ApiService {
+public class ApiHandler {
 
     public enum ErrorCode {
         INVALID_PAYLOAD,
@@ -28,14 +28,14 @@ public class ApiService {
     private final Context context;
 
 
-    public ApiService(String serverUrl, Context context) {
+    public ApiHandler(String serverUrl, Context context) {
         this.serverUrl = serverUrl;
         this.context = context;
     }
 
-    public void createUser(final String username, final ApiServiceCallback callback) {
+    public void createUser(final String username, final ApiHandlerCallback callback) {
 
-        ApiServiceAsyncTask asyncTask = new ApiServiceAsyncTask(callback) {
+        ApiHandlerAsyncTask asyncTask = new ApiHandlerAsyncTask(callback) {
             @Override
             protected HttpRequest onPrepareRequest() {
                 // build url
