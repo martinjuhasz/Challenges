@@ -45,8 +45,8 @@ public class GameService extends Service {
         super.onCreate();
 
         this.binder = new GameServiceBinder();
-        this.userToken = getUserTokenFromPreferences();
-        this.apiHandler = new ApiHandler(getString(R.string.constant_server_url), this);
+        setUserTokenFromPreferences();
+        this.apiHandler = new ApiHandler(getString(R.string.constant_server_url), this, this.userToken);
         this.listeners = new ArrayList<>();
     }
 
@@ -108,7 +108,7 @@ public class GameService extends Service {
         apiHandler.createUser(username, new ApiHandlerCallback() {
             @Override
             public void requestFinished() {
-                GameService.this.userToken = getUserTokenFromPreferences();
+                setUserTokenFromPreferences();
                 callListenerUserRegistrationUpdated(true);
             }
 
@@ -121,10 +121,29 @@ public class GameService extends Service {
 
     }
 
-    private String getUserTokenFromPreferences() {
+    public void updateGames() {
+        apiHandler.getGames(new ApiHandlerCallback() {
+            @Override
+            public void requestFinished() {
+
+            }
+
+            @Override
+            public void requestFailed(ApiHandler.ErrorCode errorCode) {
+
+            }
+        });
+    }
+
+    private void setUserTokenFromPreferences() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         String prefUserToken = sharedPreferences.getString(TOKEN_KEY, null);
-        return prefUserToken;
+        if (prefUserToken != null) {
+            this.userToken = prefUserToken;
+            if (this.apiHandler != null) {
+                this.apiHandler.setAuthToken(this.userToken);
+            }
+        }
     }
 
 

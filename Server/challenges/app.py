@@ -22,11 +22,23 @@ manager = flask.ext.restless.APIManager(app, flask_sqlalchemy_db=db)
 manager.create_api(Game, methods=['GET', 'POST', 'DELETE'])
 manager.create_api(Challenge, methods=['GET', 'POST', 'DELETE'])
 
+
+def user_authenticated():
+    token = request.headers.get('challenge_user_token')
+    if token:
+        user = User.query.filter_by(token=token).first()
+        if user:
+            return user
+    return None
+
 @app.route('/games')
 def games():
+    user = user_authenticated()
+    if not user:
+        return "", 403
+
     games = Game.query.all()
-    print games
-    return str(games)
+    return jsonify({'test': 'server test'})
 
 
 @app.route('/users', methods=['POST'])

@@ -36,6 +36,7 @@ public class GameListActivity extends Activity {
             public void onServiceConnected(ComponentName name, IBinder service) {
                 gameService = ((GameService.GameServiceBinder)service).getService();
                 checkLogin();
+                gameService.updateGames();
             }
             @Override
             public void onServiceDisconnected(ComponentName name) {
@@ -56,6 +57,16 @@ public class GameListActivity extends Activity {
             gameServiceFound = false;
             gameService = null;
             unbindService(gameServiceConnection);
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (gameService != null) {
+            gameService.updateGames();
+            Log.i(TAG, "udpate games");
         }
     }
 

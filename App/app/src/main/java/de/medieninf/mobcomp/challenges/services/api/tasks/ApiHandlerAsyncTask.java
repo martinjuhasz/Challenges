@@ -6,6 +6,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import de.medieninf.mobcomp.challenges.external.HttpRequest;
+import de.medieninf.mobcomp.challenges.services.api.ApiHandler;
 import de.medieninf.mobcomp.challenges.services.api.ApiHandler.ErrorCode;
 import de.medieninf.mobcomp.challenges.services.api.ApiHandlerCallback;
 
@@ -16,10 +17,20 @@ public abstract class ApiHandlerAsyncTask extends AsyncTask<Void, Long, Void> {
 
     private final ApiHandlerCallback callback;
     private ErrorCode errorCode;
+    private String authToken;
 
     public ApiHandlerAsyncTask(ApiHandlerCallback callback) {
+        this(callback, null);
+    }
+
+    public ApiHandlerAsyncTask(ApiHandlerCallback callback, String authToken) {
         this.callback = callback;
+        this.authToken = authToken;
         this.errorCode = null;
+    }
+
+    public void setAuthToken(String authToken) {
+        this.authToken = authToken;
     }
 
     protected abstract HttpRequest onPrepareRequest();
@@ -32,6 +43,11 @@ public abstract class ApiHandlerAsyncTask extends AsyncTask<Void, Long, Void> {
     protected Void doInBackground(Void... params) {
         try {
             HttpRequest request = onPrepareRequest();
+
+            if(this.authToken != null) {
+                request.header(ApiHandler.HEADER_TOKEN, this.authToken);
+            }
+
             if (request != null && request.ok()) {
 
                 // extract response json object if needed
