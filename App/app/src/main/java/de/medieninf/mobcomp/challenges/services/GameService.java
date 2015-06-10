@@ -46,7 +46,7 @@ public class GameService extends Service {
 
         this.binder = new GameServiceBinder();
         setUserTokenFromPreferences();
-        this.apiHandler = new ApiHandler(getString(R.string.constant_server_url), this, this.userToken);
+        this.apiHandler = new ApiHandler(getString(R.string.constant_server_url), this, this.userToken, getContentResolver());
         this.listeners = new ArrayList<>();
     }
 

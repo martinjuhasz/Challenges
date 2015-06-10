@@ -29,6 +29,10 @@
         </activity>
 
         <service android:name=".services.GameService" android:exported="false"></service>
+        <provider
+            android:authorities="de.medieninf.mobcomp.challenges.provider.content.database"
+            android:name=".database.DatabaseProvider"
+            android:exported="false"></provider>
 
     </application>
 

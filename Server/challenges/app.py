@@ -53,7 +53,13 @@ def create_user():
         db.session.add(user)
         db.session.commit()
     except exc.IntegrityError:
-        return jsonify({'error': "username already taken"})
+
+        # TODO: REMOVE!! only temp login
+        db.session.rollback()
+        user = User.query.filter_by(username=request_json['username']).first()
+        return jsonify({'token': user.token})
+
+        return jsonify({'error_code': "USER_TAKEN"})
 
     return jsonify({'token': user.token})
 

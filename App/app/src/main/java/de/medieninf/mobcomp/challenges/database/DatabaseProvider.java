@@ -2,19 +2,17 @@ package de.medieninf.mobcomp.challenges.database;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
-import android.content.Intent;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.net.Uri;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 /**
  * Created by Martin Juhasz on 09/06/15.
  */
-public class DatabaseContentProvider extends ContentProvider {
+public class DatabaseProvider extends ContentProvider {
 
-    final static String TAG = DatabaseContentProvider.class.getSimpleName();
+    final static String TAG = DatabaseProvider.class.getSimpleName();
 
     // General Statics
     public static final String AUTHORITY = "de.medieninf.mobcomp.challenges.provider.content.database";

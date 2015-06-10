@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 /**
  * Created by Martin Juhasz on 09/06/15.
@@ -22,13 +23,17 @@ public class Database {
 
         public static final String TABLE = "games";
         public static final String ID = "_id";
+        public static final String SERVER_ID = "server_id";
         public static final String ROUNDS = "rounds";
+        public static final String TITLE = "title";
         public static final String SUBMITTED = "submitted";
 
         private static final String CREATE_TABLE =
                 "CREATE TABLE " + TABLE + "( "
                         + ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                        + SERVER_ID + " INTEGER NOT NULL UNIQUE, "
                         + ROUNDS + " INTEGER NOT NULL, "
+                        + TITLE + " TEXT NOT NULL, "
                         + SUBMITTED + " INTEGER NOT NULL DEFAULT 0"
                         + ")";
 
@@ -42,6 +47,7 @@ public class Database {
 
         @Override
         public void onCreate(SQLiteDatabase db) {
+            Log.i("", Game.CREATE_TABLE);
             db.execSQL(Game.CREATE_TABLE);
         }
 
