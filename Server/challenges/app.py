@@ -6,7 +6,7 @@ from flask import request, jsonify
 from flask.ext.sqlalchemy import SQLAlchemy
 import flask.ext.restless
 from sqlalchemy import exc
-
+import json
 
 app = Flask(__name__)
 app.config.from_object('config.Config')
@@ -37,8 +37,9 @@ def games():
     if not user:
         return "", 403
 
-    games = Game.query.all()
-    return jsonify({'test': 'server test'})
+    games = Game.query.join(Game.users).filter(User.id == user.id).all()
+    json = jsonify({'data': [game.to_dict() for game in games]})
+    return json
 
 
 @app.route('/users', methods=['POST'])

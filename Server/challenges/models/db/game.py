@@ -1,6 +1,7 @@
 from challenges.app import db
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
+from flask import jsonify
 
 game_user_link = db.Table('game_user_link',
                           db.Column('game_id', db.Integer, db.ForeignKey('games.id')),
@@ -19,3 +20,10 @@ class Game(db.Model):
 
     def __repr__(self):
         return 'Game(title=%s, game_rounds=%d users=%s)' % (self.title, self.game_rounds, str(len(self.users)))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'game_rounds': self.game_rounds
+        }
