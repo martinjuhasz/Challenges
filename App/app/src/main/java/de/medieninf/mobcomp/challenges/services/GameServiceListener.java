@@ -7,4 +7,6 @@ public interface GameServiceListener {
 
     public void userRegistrationUpdated(boolean successfully);
 
+    public void gamesUpdated(boolean successfully);
+
 }

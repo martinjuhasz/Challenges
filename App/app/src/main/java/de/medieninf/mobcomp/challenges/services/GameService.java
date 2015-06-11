@@ -90,6 +90,19 @@ public class GameService extends Service {
         }
     }
 
+    private void callListenerGamesUpdated(boolean successfully) {
+        for (Iterator<WeakReference<GameServiceListener>> iterator = this.listeners.iterator(); iterator.hasNext(); ) {
+            WeakReference<GameServiceListener> weakRef = iterator.next();
+            // clean empty refs when already iterating
+            if (weakRef.get() == null) {
+                iterator.remove();
+                continue;
+            }
+            weakRef.get().gamesUpdated(successfully);
+        }
+    }
+
+
     @Override
     public IBinder onBind(Intent intent) {
         return this.binder;
@@ -118,19 +131,19 @@ public class GameService extends Service {
                 callListenerUserRegistrationUpdated(false);
             }
         });
-
     }
 
     public void updateGames() {
         apiHandler.getGames(new ApiHandlerCallback() {
             @Override
             public void requestFinished() {
-
+                callListenerGamesUpdated(true);
             }
 
             @Override
             public void requestFailed(ApiHandler.ErrorCode errorCode) {
-
+                Log.i(TAG, "request failed: " + errorCode);
+                callListenerGamesUpdated(false);
             }
         });
     }
@@ -145,7 +158,4 @@ public class GameService extends Service {
             }
         }
     }
-
-
-
 }

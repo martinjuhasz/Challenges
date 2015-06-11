@@ -1,2 +1,4 @@
 virtualenv/
 .DS_Store
+Server/.idea/Server.iml
+Server/.idea/misc.xml

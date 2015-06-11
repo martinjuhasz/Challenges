@@ -38,6 +38,7 @@ public class LoginActivity extends Activity implements GameServiceListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // GUI
         setContentView(R.layout.activity_login);
         usernameEditText = (EditText)findViewById(R.id.et_login_username);
         submitButton = (Button)findViewById(R.id.bt_login_submit);
@@ -106,5 +107,10 @@ public class LoginActivity extends Activity implements GameServiceListener {
             startActivity(gameListIntent);
             finish();
         }
+    }
+
+    @Override
+    public void gamesUpdated(boolean successfully) {
+
     }
 }

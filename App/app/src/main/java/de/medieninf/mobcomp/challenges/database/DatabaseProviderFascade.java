@@ -19,5 +19,4 @@ public class DatabaseProviderFascade {
         values.put(Database.Game.SUBMITTED, submitted);
         return contentResolver.insert(scoreUri, values);
     }
-
 }
