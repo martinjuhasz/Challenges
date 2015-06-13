@@ -25,5 +25,6 @@ class Game(db.Model):
         return {
             'id': self.id,
             'title': self.title,
-            'game_rounds': self.game_rounds
+            'game_rounds': self.game_rounds,
+            'users': [user.to_dict() for user in self.users]
         }

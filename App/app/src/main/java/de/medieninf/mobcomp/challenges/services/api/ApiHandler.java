@@ -3,6 +3,7 @@ package de.medieninf.mobcomp.challenges.services.api;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
@@ -36,6 +37,8 @@ public class ApiHandler {
     public static final String KEY_ID = "id";
     public static final String KEY_TITLE = "title";
     public static final String KEY_GAME_ROUNDS = "game_rounds";
+    public static final String KEY_USERS = "users";
+    public static final String KEY_IMAGE = "image";
     public static final String HEADER_TOKEN = "challenge_user_token";
 
     final static String TAG = ApiHandler.class.getSimpleName();
@@ -112,7 +115,19 @@ public class ApiHandler {
                         int server_id = gameObject.getInt(KEY_ID);
                         String title = gameObject.getString(KEY_TITLE);
                         int game_rounds = gameObject.getInt(KEY_GAME_ROUNDS);
-                        DatabaseProviderFascade.saveGame(server_id, title, game_rounds, true, ApiHandler.this.contentResolver);
+                        Uri gameUri = DatabaseProviderFascade.saveOrUpdateGame(server_id, title, game_rounds, true, ApiHandler.this.contentResolver);
+                        int gameId = Integer.valueOf(gameUri.getLastPathSegment());
+
+                        JSONArray users = gameObject.getJSONArray(KEY_USERS);
+                        for (int j = 0; j < users.length(); ++j) {
+                            JSONObject user = users.getJSONObject(j);
+                            int user_server_id = user.getInt(KEY_ID);
+                            String username = user.getString(KEY_USERNAME);
+                            String image = user.getString(KEY_IMAGE);
+                            Uri userUri = DatabaseProviderFascade.saveOrUpdateUser(user_server_id, username, image, ApiHandler.this.contentResolver);
+                            int userId = Integer.valueOf(userUri.getLastPathSegment());
+                            DatabaseProviderFascade.addUserToGame(userId, gameId, ApiHandler.this.contentResolver);
+                        }
                     }
                     return true;
                 } catch (JSONException e) {

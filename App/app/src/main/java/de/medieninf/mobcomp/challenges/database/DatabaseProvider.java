@@ -23,8 +23,14 @@ public class DatabaseProvider extends ContentProvider {
 
     // games
     public static final String GAME_STRING = "games";
+    public static final String USER_STRING = "users";
+    public static final String USERGAMES_STRING = "usergames";
     private static final int GAMES_ID = 1;
     private static final int GAME_ID = 2;
+    private static final int USER_ID = 3;
+    private static final int USERS_ID = 4;
+    private static final int USERGAMES_ID = 5;
+
 
     // URI Matcher
     private static final UriMatcher uriMatcher;
@@ -33,6 +39,11 @@ public class DatabaseProvider extends ContentProvider {
 
         uriMatcher.addURI(AUTHORITY, GAME_STRING, GAMES_ID);
         uriMatcher.addURI(AUTHORITY, GAME_STRING+"/#", GAME_ID);
+
+        uriMatcher.addURI(AUTHORITY, USER_STRING, USERS_ID);
+        uriMatcher.addURI(AUTHORITY, USER_STRING+"/#", USER_ID);
+
+        uriMatcher.addURI(AUTHORITY, USERGAMES_STRING, USERGAMES_ID);
     }
 
     private Database database;
@@ -49,8 +60,11 @@ public class DatabaseProvider extends ContentProvider {
     public String getType(Uri uri) {
         switch (uriMatcher.match(uri)) {
             case GAME_ID:
+            case USER_ID:
                 return VND_HIGHSCORE_ITEM;
             case GAMES_ID:
+            case USERS_ID:
+            case USERGAMES_ID:
                 return VND_HIGHSCORE_DIR;
             default:
                 Log.e(TAG, "getType, uri not supported " + uri);
@@ -62,11 +76,17 @@ public class DatabaseProvider extends ContentProvider {
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
         switch (uriMatcher.match(uri)) {
             case GAME_ID:
-                Integer id = extractID(uri);
-                selection = addId(selection, id, Database.Game.ID);
+                Integer game_id = extractID(uri);
+                selection = addId(selection, game_id, Database.Game.ID);
                 return database.getDatabase().query(Database.Game.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
             case GAMES_ID:
                 return database.getDatabase().query(Database.Game.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
+            case USER_ID:
+                Integer user_id = extractID(uri);
+                selection = addId(selection, user_id, Database.User.ID);
+                return database.getDatabase().query(Database.User.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
+            case USERS_ID:
+                return database.getDatabase().query(Database.User.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
         }
         Log.e(TAG, "query, no matching uri " + uri);
         return null;
@@ -76,14 +96,28 @@ public class DatabaseProvider extends ContentProvider {
     public Uri insert(Uri uri, ContentValues values) {
         switch (uriMatcher.match(uri)) {
             case GAME_ID:
-                // we generate the id
             case GAMES_ID:
-                long id = database.getDatabase().insert(Database.Game.TABLE, null, values);
-                if (id == -1) {
+                long game_id = database.getDatabase().insertOrThrow(Database.Game.TABLE, null, values);
+                if (game_id == -1) {
                     Log.e(TAG, "insert, coundnt insert");
                     return null;
                 }
-                return CONTENT_URI.buildUpon().appendPath(GAME_STRING).appendPath(String.valueOf(id)).build();
+                return CONTENT_URI.buildUpon().appendPath(GAME_STRING).appendPath(String.valueOf(game_id)).build();
+            case USER_ID:
+            case USERS_ID:
+                long user_id = database.getDatabase().insertOrThrow(Database.User.TABLE, null, values);
+                if (user_id == -1) {
+                    Log.e(TAG, "insert, coundnt insert");
+                    return null;
+                }
+                return CONTENT_URI.buildUpon().appendPath(USER_STRING).appendPath(String.valueOf(user_id)).build();
+            case USERGAMES_ID:
+                long usergames_id = database.getDatabase().insertOrThrow(Database.UserGames.TABLE, null, values);
+                if (usergames_id == -1) {
+                    Log.e(TAG, "insert, coundnt insert");
+                    return null;
+                }
+                return CONTENT_URI.buildUpon().appendPath(USERGAMES_STRING).appendPath(String.valueOf(usergames_id)).build();
         }
         return null;
     }
@@ -92,11 +126,17 @@ public class DatabaseProvider extends ContentProvider {
     public int delete(Uri uri, String selection, String[] selectionArgs) {
         switch (uriMatcher.match(uri)) {
             case GAME_ID:
-                Integer id = extractID(uri);
-                selection = addId(selection, id, Database.Game.ID);
+                Integer game_id = extractID(uri);
+                selection = addId(selection, game_id, Database.Game.ID);
                 return database.getDatabase().delete(Database.Game.TABLE, selection, selectionArgs);
             case GAMES_ID:
                 return database.getDatabase().delete(Database.Game.TABLE, selection, selectionArgs);
+            case USER_ID:
+                Integer user_id = extractID(uri);
+                selection = addId(selection, user_id, Database.User.ID);
+                return database.getDatabase().delete(Database.User.TABLE, selection, selectionArgs);
+            case USERS_ID:
+                return database.getDatabase().delete(Database.User.TABLE, selection, selectionArgs);
             default:
                 Log.e(TAG, "delete, no matching URI " + uri);
                 return 0;
@@ -107,11 +147,17 @@ public class DatabaseProvider extends ContentProvider {
     public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
         switch (uriMatcher.match(uri)) {
             case GAME_ID:
-                Integer id = extractID(uri);
-                selection = addId(selection, id, Database.Game.ID);
+                Integer game_id = extractID(uri);
+                selection = addId(selection, game_id, Database.Game.ID);
                 return database.getDatabase().update(Database.Game.TABLE, values, selection, selectionArgs);
             case GAMES_ID:
                 return database.getDatabase().update(Database.Game.TABLE, values, selection, selectionArgs);
+            case USER_ID:
+                Integer user_id = extractID(uri);
+                selection = addId(selection, user_id, Database.User.ID);
+                return database.getDatabase().update(Database.User.TABLE, values, selection, selectionArgs);
+            case USERS_ID:
+                return database.getDatabase().update(Database.User.TABLE, values, selection, selectionArgs);
             default:
                 return 0;
         }

@@ -33,11 +33,11 @@ def user_authenticated():
 
 @app.route('/games')
 def games():
-    user = user_authenticated()
-    if not user:
+    current_user = user_authenticated()
+    if not current_user:
         return "", 403
 
-    games = Game.query.join(Game.users).filter(User.id == user.id).all()
+    games = Game.query.join(Game.users).filter(User.id == current_user.id).all()
     json = jsonify({'data': [game.to_dict() for game in games]})
     return json
 
@@ -53,15 +53,22 @@ def create_user():
         db.session.add(user)
         db.session.commit()
     except exc.IntegrityError:
-
         # TODO: REMOVE!! only temp login
         db.session.rollback()
         user = User.query.filter_by(username=request_json['username']).first()
         return jsonify({'token': user.token})
-
         return jsonify({'error_code': "USER_TAKEN"})
 
     return jsonify({'token': user.token})
+
+@app.route('/users/<int:user_id>', methods=['GET'])
+def get_user(user_id):
+    current_user = user_authenticated()
+    if not current_user:
+        return "", 403
+
+    user = User.query.filter_by(id=user_id).first()
+    return jsonify({'data': user.to_dict()})
 
 
 @app.route('/fill_db')

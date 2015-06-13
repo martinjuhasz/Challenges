@@ -39,6 +39,39 @@ public class Database {
 
     }
 
+    public class User {
+        public static final String TABLE = "users";
+        public static final String ID = "_id";
+        public static final String SERVER_ID = "server_id";
+        public static final String USERNAME = "username";
+        public static final String IMAGE = "image";
+
+        private static final String CREATE_TABLE =
+                "CREATE TABLE " + TABLE + "( "
+                        + ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                        + SERVER_ID + " INTEGER NOT NULL UNIQUE, "
+                        + USERNAME + " TEXT NOT NULL, "
+                        + IMAGE + " BLOB "
+                        + ")";
+    }
+
+    public class UserGames {
+        public static final String TABLE = "usergames";
+        public static final String ID = "_id";
+        public static final String USERNAME_ID = "username_id";
+        public static final String GAME_ID = "game_id";
+
+        private static final String CREATE_TABLE =
+                "CREATE TABLE " + TABLE + "( "
+                        + ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                        + USERNAME_ID + " INTEGER NOT NULL, "
+                        + GAME_ID + " INTEGER NOT NULL, "
+                        + "FOREIGN KEY(" + USERNAME_ID + ") REFERENCES " + User.TABLE + "(" + User.ID + "), "
+                        + "FOREIGN KEY(" + GAME_ID + ") REFERENCES " + Game.TABLE + "(" + Game.ID + "), "
+                        + "UNIQUE (" + USERNAME_ID + ", " + GAME_ID + ") "
+                        + ")";
+    }
+
     private static class DBHelper extends SQLiteOpenHelper {
 
         public DBHelper(Context context, String name, SQLiteDatabase.CursorFactory factory, int version) {
@@ -47,12 +80,15 @@ public class Database {
 
         @Override
         public void onCreate(SQLiteDatabase db) {
-            Log.i("", Game.CREATE_TABLE);
             db.execSQL(Game.CREATE_TABLE);
+            db.execSQL(User.CREATE_TABLE);
+            db.execSQL(UserGames.CREATE_TABLE);
         }
 
         @Override
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+            db.execSQL("DROP TABLE IF EXISTS " + UserGames.TABLE);
+            db.execSQL("DROP TABLE IF EXISTS " + User.TABLE);
             db.execSQL("DROP TABLE IF EXISTS " + Game.TABLE);
             onCreate(db);
         }
