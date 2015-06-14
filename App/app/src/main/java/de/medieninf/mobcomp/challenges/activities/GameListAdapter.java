@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import android.widget.CursorAdapter;
 import android.widget.TextView;
 import de.medieninf.mobcomp.challenges.R;
+import de.medieninf.mobcomp.challenges.database.Database;
 
 
 /**
@@ -30,9 +31,9 @@ public class GameListAdapter extends CursorAdapter {
     @Override
     public void bindView(View view, Context context, Cursor cursor) {
         TextView gametext = (TextView)view.findViewById(R.id.gamelist_gametext);
-        //TextView usertext = (TextView)view.findViewById(R.id.gamelist_usertext);
-        gametext.setText(cursor.getString(0));
+        gametext.setText(cursor.getString(cursor.getColumnIndex(Database.Game.TITLE)));
 
-
+        TextView usertext = (TextView)view.findViewById(R.id.gamelist_usertext);
+        usertext.setText("Users");
     }
 }

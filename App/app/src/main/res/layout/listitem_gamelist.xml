@@ -8,13 +8,16 @@
     <TextView
         android:id="@+id/gamelist_gametext"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:text="Sample Game Title"
+        android:textSize="16dp"
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/gamelist_usertext"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Sample Game Title"
-        android:textSize="16dp"
+        android:text="Sample User 1, Sample User 2"
+        android:textSize="14dp"
         />
 </LinearLayout>
