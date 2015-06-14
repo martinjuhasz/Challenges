@@ -1,9 +1,8 @@
 <resources>
     <string name="app_name">Challenges</string>
     <string name="title_activity_game_list">Challenges</string>
-
-    <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="login_username_title">Enter your desired username here:</string>
     <string name="login_submit">Submit</string>
+    <string name="gamelist_current_games">Aktuelle Spiele:</string>
 </resources>
