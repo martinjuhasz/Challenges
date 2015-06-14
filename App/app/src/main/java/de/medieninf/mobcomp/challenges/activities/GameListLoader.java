@@ -17,6 +17,8 @@ import de.medieninf.mobcomp.challenges.database.DatabaseProvider;
  */
 public class GameListLoader implements LoaderManager.LoaderCallbacks<Cursor>{
 
+    final static int ID = 1;
+
     private Uri gamesUri;
     private CursorAdapter adapter;
     private Context context;
@@ -43,7 +45,6 @@ public class GameListLoader implements LoaderManager.LoaderCallbacks<Cursor>{
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
         adapter.swapCursor(data);
-
     }
 
     @Override

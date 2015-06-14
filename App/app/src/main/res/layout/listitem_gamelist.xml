@@ -4,7 +4,12 @@
     android:layout_height="match_parent">
 
     <TextView
-        android:id="@+id/gamelist_itemtext"
+        android:id="@+id/gamelist_gametext"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:id="@+id/gamelist_usertext"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 </LinearLayout>

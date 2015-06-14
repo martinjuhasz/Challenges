@@ -29,7 +29,10 @@ public class GameListAdapter extends CursorAdapter {
 
     @Override
     public void bindView(View view, Context context, Cursor cursor) {
-        TextView gamelistItem = (TextView)view.findViewById(R.id.gamelist_itemtext);
-        gamelistItem.setText(cursor.getString(0));
+        TextView gametext = (TextView)view.findViewById(R.id.gamelist_gametext);
+        //TextView usertext = (TextView)view.findViewById(R.id.gamelist_usertext);
+        gametext.setText(cursor.getString(0));
+
+
     }
 }

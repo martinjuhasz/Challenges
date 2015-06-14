@@ -5,18 +5,12 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.database.Cursor;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.CursorAdapter;
 import android.widget.ListView;
-import android.widget.SimpleCursorAdapter;
-
 import de.medieninf.mobcomp.challenges.R;
 import de.medieninf.mobcomp.challenges.services.GameService;
 import de.medieninf.mobcomp.challenges.services.GameServiceListener;
@@ -26,7 +20,6 @@ public class GameListActivity extends Activity implements GameServiceListener {
 
     //instance variables
     final static String TAG = GameListActivity.class.getSimpleName();
-    final static int GAMELIST_LOADER = 1;
 
     // Services
     private boolean gameServiceFound;
@@ -48,10 +41,12 @@ public class GameListActivity extends Activity implements GameServiceListener {
 
         //ListView + Loader
         gamesList = (ListView) findViewById(R.id.gamelist_listview);
+        // create adapter
         GameListAdapter gameListAdapter = new GameListAdapter(this);
         gamesList.setAdapter(gameListAdapter);
+        // create and start loader
         loader = new GameListLoader(gameListAdapter, this);
-        getLoaderManager().initLoader(GAMELIST_LOADER, null, loader);
+        getLoaderManager().initLoader(GameListLoader.ID, null, loader);
 
 
         gameServiceConnection = new ServiceConnection() {
@@ -60,6 +55,7 @@ public class GameListActivity extends Activity implements GameServiceListener {
                 gameService = ((GameService.GameServiceBinder) service).getService();
                 checkLogin();
                 gameService.updateGames();
+                gameService.addListener(GameListActivity.this);
             }
 
             @Override
@@ -133,6 +129,6 @@ public class GameListActivity extends Activity implements GameServiceListener {
 
     @Override
     public void gamesUpdated(boolean successfully) {
-        getLoaderManager().getLoader(GAMELIST_LOADER).forceLoad();
+        getLoaderManager().restartLoader(GameListLoader.ID,null,loader);
     }
 }

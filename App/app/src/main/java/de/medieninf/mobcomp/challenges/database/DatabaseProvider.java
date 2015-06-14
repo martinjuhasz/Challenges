@@ -219,4 +219,8 @@ public class DatabaseProvider extends ContentProvider {
         String sand = selection.isEmpty() ? "" : " AND ";
         return String.format("%s%s%s=%d", selection, sand, idColumn, id);
     }
+
+    public Cursor rawQuery(String sql, String[] selectionArgs){
+        return database.getDatabase().rawQuery(sql,selectionArgs);
+    }
 }
