@@ -3,6 +3,7 @@ package de.medieninf.mobcomp.challenges.database;
 import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteException;
@@ -137,5 +138,28 @@ public class DatabaseProviderFascade {
         }
 
         return savedUri;
+    }
+
+    public static Cursor getChallengeForGame(int gameID, ContentResolver contentResolver) {
+        Uri gameUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.GAME_STRING).build();
+        Cursor gameCursor = contentResolver.query(gameUri, new String[]{Database.Game.ID, Database.Game.CURRENT_CHALLENGE_ID}, Database.Game.SERVER_ID + " = ?", new String[]{String.valueOf(gameID)}, null);
+        gameCursor.moveToFirst();
+
+        // invalid gameID
+        if (gameCursor.getCount() <= 0) {
+            return null;
+        }
+
+        int challengeID = gameCursor.getInt(gameCursor.getColumnIndex(Database.Game.CURRENT_CHALLENGE_ID));
+        Uri challengeUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.CHALLENGE_STRING).appendPath(String.valueOf(challengeID)).build();
+        Cursor challengeCursor = contentResolver.query(challengeUri, new String[]{Database.Challenge.ID, Database.Challenge.TYPE}, null, null, null);
+        challengeCursor.moveToFirst();
+
+        // no current challenge exists for game
+        if (challengeCursor.getCount() <= 0) {
+            return null;
+        }
+
+        return challengeCursor;
     }
 }

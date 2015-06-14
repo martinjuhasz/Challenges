@@ -1,8 +1,10 @@
 package de.medieninf.mobcomp.challenges.services;
 
 import android.app.Service;
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.os.Binder;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
@@ -15,6 +17,9 @@ import java.util.Iterator;
 import java.util.List;
 
 import de.medieninf.mobcomp.challenges.R;
+import de.medieninf.mobcomp.challenges.activities.PhotoChallengeActivity;
+import de.medieninf.mobcomp.challenges.database.Database;
+import de.medieninf.mobcomp.challenges.database.DatabaseProviderFascade;
 import de.medieninf.mobcomp.challenges.services.api.ApiHandler;
 import de.medieninf.mobcomp.challenges.services.api.ApiHandlerCallback;
 
@@ -32,12 +37,14 @@ public class GameService extends Service {
 
     // statics
     public static final String TOKEN_KEY = "constant_usertoken";
+    public static final String EXTRA_KEY_CHALLENGE_ID = "EXTRA_KEY_CHALLENGE_ID";
 
     // instance variables
     final static String TAG = GameService.class.getSimpleName();
     private IBinder binder;
     private String userToken;
     private ApiHandler apiHandler;
+    private ContentResolver contentResolver;
     private List<WeakReference<GameServiceListener>> listeners;
 
     @Override
@@ -46,7 +53,8 @@ public class GameService extends Service {
 
         this.binder = new GameServiceBinder();
         setUserTokenFromPreferences();
-        this.apiHandler = new ApiHandler(getString(R.string.constant_server_url), this, this.userToken, getContentResolver());
+        this.contentResolver = getContentResolver();
+        this.apiHandler = new ApiHandler(getString(R.string.constant_server_url), this, this.userToken, this.contentResolver);
         this.listeners = new ArrayList<>();
     }
 
@@ -106,6 +114,33 @@ public class GameService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return this.binder;
+    }
+
+    public Intent getIntentForChallengeActivity(int gameID) {
+        Cursor challengeCursor = DatabaseProviderFascade.getChallengeForGame(gameID, this.contentResolver);
+
+        if (challengeCursor == null) {
+            return null;
+        }
+
+        int challengeID = challengeCursor.getInt(challengeCursor.getColumnIndex(Database.Challenge.ID));
+
+        // TODO: implement Submissions
+
+        // switch challenge type
+        int challengeType = challengeCursor.getInt(challengeCursor.getColumnIndex(Database.Challenge.TYPE));
+        Intent challengeIntent = null;
+        switch (challengeType) {
+            case 1:
+                challengeIntent = new Intent(this, PhotoChallengeActivity.class);
+                break;
+            default:
+                throw new RuntimeException("invalid challenge type");
+        }
+
+
+        challengeIntent.putExtra(EXTRA_KEY_CHALLENGE_ID, challengeID);
+        return challengeIntent;
     }
 
     public boolean isUserLoggedIn() {

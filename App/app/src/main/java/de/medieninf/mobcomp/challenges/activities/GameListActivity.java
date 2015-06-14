@@ -13,11 +13,13 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.CursorAdapter;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 
 import de.medieninf.mobcomp.challenges.R;
+import de.medieninf.mobcomp.challenges.database.Database;
 import de.medieninf.mobcomp.challenges.services.GameService;
 import de.medieninf.mobcomp.challenges.services.GameServiceListener;
 
@@ -52,6 +54,12 @@ public class GameListActivity extends Activity implements GameServiceListener {
         gamesList.setAdapter(gameListAdapter);
         loader = new GameListLoader(gameListAdapter, this);
         getLoaderManager().initLoader(GAMELIST_LOADER, null, loader);
+        gamesList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                currentGameClicked(position);
+            }
+        });
 
 
         gameServiceConnection = new ServiceConnection() {
@@ -123,6 +131,21 @@ public class GameListActivity extends Activity implements GameServiceListener {
             finish();
         } else {
             Log.i(TAG, "checkLogin: registered");
+        }
+    }
+
+    private void currentGameClicked(int position) {
+        if (gameService == null) {
+            return;
+        }
+
+        Cursor gameCursor = ((GameListAdapter)gamesList.getAdapter()).getCursor();
+        gameCursor.moveToPosition(position);
+
+        int gameID = gameCursor.getInt(gameCursor.getColumnIndex(Database.Game.ID));
+        Intent challengeIntent = gameService.getIntentForChallengeActivity(gameID);
+        if (challengeIntent != null) {
+            startActivity(challengeIntent);
         }
     }
 
