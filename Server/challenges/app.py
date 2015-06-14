@@ -4,9 +4,7 @@
 from flask import Flask
 from flask import request, jsonify
 from flask.ext.sqlalchemy import SQLAlchemy
-import flask.ext.restless
 from sqlalchemy import exc
-import json
 
 app = Flask(__name__)
 app.config.from_object('config.Config')
@@ -17,11 +15,9 @@ from challenges.models.db.user import User
 from challenges.models.db.challenge import Challenge
 from challenges.models.db.challenge_task import ChallengeTask
 from challenges.models.db.challenge_type import ChallengeType
+from controller.game_controller import GameController
 
-manager = flask.ext.restless.APIManager(app, flask_sqlalchemy_db=db)
-manager.create_api(Game, methods=['GET', 'POST', 'DELETE'])
-manager.create_api(Challenge, methods=['GET', 'POST', 'DELETE'])
-
+game_controller = GameController(db)
 
 def user_authenticated():
     token = request.headers.get('challenge_user_token')
@@ -37,7 +33,7 @@ def games():
     if not current_user:
         return "", 403
 
-    games = Game.query.join(Game.users).filter(User.id == current_user.id).all()
+    games = game_controller.get_games(current_user)
     json = jsonify({'data': [game.to_dict() for game in games]})
     return json
 
@@ -57,18 +53,10 @@ def create_user():
         db.session.rollback()
         user = User.query.filter_by(username=request_json['username']).first()
         return jsonify({'token': user.token})
+
         return jsonify({'error_code': "USER_TAKEN"})
 
     return jsonify({'token': user.token})
-
-@app.route('/users/<int:user_id>', methods=['GET'])
-def get_user(user_id):
-    current_user = user_authenticated()
-    if not current_user:
-        return "", 403
-
-    user = User.query.filter_by(id=user_id).first()
-    return jsonify({'data': user.to_dict()})
 
 
 @app.route('/fill_db')
@@ -93,7 +81,7 @@ def fill():
 
 
     # add some games
-    game1 = Game(title="Game 1", game_rounds=10)
+    game1 = game_controller.create_game("Game 1")
     game1.users.append(user1)
     game1.users.append(user2)
 
@@ -103,7 +91,7 @@ def fill():
     db.session.add(challenge1)
 
 
-    game2 = Game(title="Game 2", game_rounds=2)
+    game2 = game_controller.create_game("Game 2")
     game2.users.append(user1)
     game2.users.append(user2)
     game2.users.append(user3)
