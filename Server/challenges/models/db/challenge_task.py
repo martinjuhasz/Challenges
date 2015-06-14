@@ -12,5 +12,5 @@ class ChallengeTask(db.Model):
     id = Column(Integer, primary_key=True)
     hint_text = Column(Text())
     task_text = Column(Text())
-    challenges = db.relationship('Challenge', backref='challenge_tasks', lazy='dynamic')
+    challenges = db.relationship('Challenge', backref='task', lazy='dynamic')
     challenge_type_id = db.Column(db.Integer, db.ForeignKey('challenge_types.id'))

@@ -11,4 +11,4 @@ class ChallengeType(db.Model):
 
     id = Column(Integer, primary_key=True)
     title = Column(String(255), unique=True)
-    tasks = db.relationship('ChallengeTask', backref='challenge_types', lazy='dynamic')
+    tasks = db.relationship('ChallengeTask', backref='type', lazy='dynamic')
