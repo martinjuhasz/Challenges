@@ -25,11 +25,14 @@ public class DatabaseProvider extends ContentProvider {
     public static final String GAME_STRING = "games";
     public static final String USER_STRING = "users";
     public static final String USERGAMES_STRING = "usergames";
+    public static final String CHALLENGE_STRING = "challenges";
     private static final int GAMES_ID = 1;
     private static final int GAME_ID = 2;
     private static final int USER_ID = 3;
     private static final int USERS_ID = 4;
     private static final int USERGAMES_ID = 5;
+    private static final int CHALLENGE_ID = 6;
+    private static final int CHALLENGES_ID = 7;
 
 
     // URI Matcher
@@ -37,13 +40,21 @@ public class DatabaseProvider extends ContentProvider {
     static {
         uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 
+        // /games /games/<id>
         uriMatcher.addURI(AUTHORITY, GAME_STRING, GAMES_ID);
         uriMatcher.addURI(AUTHORITY, GAME_STRING+"/#", GAME_ID);
 
+        // /users /users/<id>
         uriMatcher.addURI(AUTHORITY, USER_STRING, USERS_ID);
         uriMatcher.addURI(AUTHORITY, USER_STRING+"/#", USER_ID);
 
+        // /usergames
         uriMatcher.addURI(AUTHORITY, USERGAMES_STRING, USERGAMES_ID);
+
+        // /challenges /challenges/<id>
+        uriMatcher.addURI(AUTHORITY, CHALLENGE_STRING, CHALLENGES_ID);
+        uriMatcher.addURI(AUTHORITY, CHALLENGE_STRING+"/#", CHALLENGE_ID);
+
     }
 
     private Database database;
@@ -61,10 +72,12 @@ public class DatabaseProvider extends ContentProvider {
         switch (uriMatcher.match(uri)) {
             case GAME_ID:
             case USER_ID:
+            case CHALLENGE_ID:
                 return VND_HIGHSCORE_ITEM;
             case GAMES_ID:
             case USERS_ID:
             case USERGAMES_ID:
+            case CHALLENGES_ID:
                 return VND_HIGHSCORE_DIR;
             default:
                 Log.e(TAG, "getType, uri not supported " + uri);
@@ -87,6 +100,12 @@ public class DatabaseProvider extends ContentProvider {
                 return database.getDatabase().query(Database.User.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
             case USERS_ID:
                 return database.getDatabase().query(Database.User.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
+            case CHALLENGE_ID:
+                Integer challenge_id = extractID(uri);
+                selection = addId(selection, challenge_id, Database.Challenge.ID);
+                return database.getDatabase().query(Database.Challenge.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
+            case CHALLENGES_ID:
+                return database.getDatabase().query(Database.Challenge.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
         }
         Log.e(TAG, "query, no matching uri " + uri);
         return null;
@@ -118,6 +137,14 @@ public class DatabaseProvider extends ContentProvider {
                     return null;
                 }
                 return CONTENT_URI.buildUpon().appendPath(USERGAMES_STRING).appendPath(String.valueOf(usergames_id)).build();
+            case CHALLENGE_ID:
+            case CHALLENGES_ID:
+                long challenge_id = database.getDatabase().insertOrThrow(Database.Challenge.TABLE, null, values);
+                if (challenge_id == -1) {
+                    Log.e(TAG, "insert, coundnt insert");
+                    return null;
+                }
+                return CONTENT_URI.buildUpon().appendPath(CHALLENGE_STRING).appendPath(String.valueOf(challenge_id)).build();
         }
         return null;
     }
@@ -137,6 +164,12 @@ public class DatabaseProvider extends ContentProvider {
                 return database.getDatabase().delete(Database.User.TABLE, selection, selectionArgs);
             case USERS_ID:
                 return database.getDatabase().delete(Database.User.TABLE, selection, selectionArgs);
+            case CHALLENGE_ID:
+                Integer challenge_id = extractID(uri);
+                selection = addId(selection, challenge_id, Database.Challenge.ID);
+                return database.getDatabase().delete(Database.Challenge.TABLE, selection, selectionArgs);
+            case CHALLENGES_ID:
+                return database.getDatabase().delete(Database.Challenge.TABLE, selection, selectionArgs);
             default:
                 Log.e(TAG, "delete, no matching URI " + uri);
                 return 0;
@@ -158,6 +191,12 @@ public class DatabaseProvider extends ContentProvider {
                 return database.getDatabase().update(Database.User.TABLE, values, selection, selectionArgs);
             case USERS_ID:
                 return database.getDatabase().update(Database.User.TABLE, values, selection, selectionArgs);
+            case CHALLENGE_ID:
+                Integer challenge_id = extractID(uri);
+                selection = addId(selection, challenge_id, Database.Challenge.ID);
+                return database.getDatabase().update(Database.Challenge.TABLE, values, selection, selectionArgs);
+            case CHALLENGES_ID:
+                return database.getDatabase().update(Database.Challenge.TABLE, values, selection, selectionArgs);
             default:
                 return 0;
         }

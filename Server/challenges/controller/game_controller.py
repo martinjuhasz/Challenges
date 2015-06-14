@@ -32,7 +32,7 @@ class GameController:
         task_count = int(task_query.count())
         task = task_query.offset(int(task_count*random.random())).first()
 
-        challenge = Challenge(challenge_task_id=task.id)
+        challenge = Challenge(challenge_task_id=task.id, status=Challenge.STATUS_PLAYING)
         return challenge
 
 

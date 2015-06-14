@@ -85,21 +85,11 @@ def fill():
     game1.users.append(user1)
     game1.users.append(user2)
 
-    challenge1 = Challenge()
-    challengeTask2.challenges.append(challenge1)
-    game1.challenges.append(challenge1)
-    db.session.add(challenge1)
-
 
     game2 = game_controller.create_game("Game 2")
     game2.users.append(user1)
     game2.users.append(user2)
     game2.users.append(user3)
-
-    challenge2 = Challenge()
-    challengeTask1.challenges.append(challenge2)
-    game2.challenges.append(challenge2)
-    db.session.add(challenge2)
 
     db.session.add_all([game1, game2])
     db.session.commit()

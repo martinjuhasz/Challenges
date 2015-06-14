@@ -72,6 +72,29 @@ public class Database {
                         + ")";
     }
 
+    public class Challenge {
+        public static final String TABLE = "challenges";
+        public static final String ID = "_id";
+        public static final String SERVER_ID = "server_id";
+        public static final String GAME_ID = "game_id";
+        public static final String STATUS = "status";
+        public static final String TEXT_HINT = "text_hint";
+        public static final String TEXT_TASK = "text_task";
+        public static final String TYPE = "type";
+
+        private static final String CREATE_TABLE =
+                "CREATE TABLE " + TABLE + "( "
+                        + ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                        + SERVER_ID + " INTEGER NOT NULL UNIQUE, "
+                        + GAME_ID + " INTEGER NOT NULL, "
+                        + STATUS + " INTEGER NOT NULL, "
+                        + TEXT_HINT + " TEXT NOT NULL, "
+                        + TEXT_TASK + " TEXT NOT NULL, "
+                        + TYPE + " INTEGER NOT NULL, "
+                        + "FOREIGN KEY(" + GAME_ID + ") REFERENCES " + Game.TABLE + "(" + Game.ID + ") ON DELETE CASCADE "
+                        + ")";
+    }
+
     private static class DBHelper extends SQLiteOpenHelper {
 
         public DBHelper(Context context, String name, SQLiteDatabase.CursorFactory factory, int version) {
@@ -83,10 +106,12 @@ public class Database {
             db.execSQL(Game.CREATE_TABLE);
             db.execSQL(User.CREATE_TABLE);
             db.execSQL(UserGames.CREATE_TABLE);
+            db.execSQL(Challenge.CREATE_TABLE);
         }
 
         @Override
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+            db.execSQL("DROP TABLE IF EXISTS " + Challenge.TABLE);
             db.execSQL("DROP TABLE IF EXISTS " + UserGames.TABLE);
             db.execSQL("DROP TABLE IF EXISTS " + User.TABLE);
             db.execSQL("DROP TABLE IF EXISTS " + Game.TABLE);

@@ -39,6 +39,11 @@ public class ApiHandler {
     public static final String KEY_GAME_ROUNDS = "game_rounds";
     public static final String KEY_USERS = "users";
     public static final String KEY_IMAGE = "image";
+    public static final String KEY_CURRENT_CHALLENGE = "current_challenge";
+    public static final String KEY_STATUS = "status";
+    public static final String KEY_TEXT_HINT = "text_hint";
+    public static final String KEY_TEXT_TASK = "text_task";
+    public static final String KEY_TYPE = "type";
     public static final String HEADER_TOKEN = "challenge_user_token";
 
     final static String TAG = ApiHandler.class.getSimpleName();
@@ -111,6 +116,8 @@ public class ApiHandler {
                 try {
                     JSONArray games = returnObject.getJSONArray(KEY_DATA);
                     for (int i = 0; i < games.length(); ++i) {
+
+                        // Add Game
                         JSONObject gameObject = games.getJSONObject(i);
                         int server_id = gameObject.getInt(KEY_ID);
                         String title = gameObject.getString(KEY_TITLE);
@@ -118,6 +125,7 @@ public class ApiHandler {
                         Uri gameUri = DatabaseProviderFascade.saveOrUpdateGame(server_id, title, game_rounds, true, ApiHandler.this.contentResolver);
                         int gameId = Integer.valueOf(gameUri.getLastPathSegment());
 
+                        // Add Users
                         JSONArray users = gameObject.getJSONArray(KEY_USERS);
                         for (int j = 0; j < users.length(); ++j) {
                             JSONObject user = users.getJSONObject(j);
@@ -128,6 +136,18 @@ public class ApiHandler {
                             int userId = Integer.valueOf(userUri.getLastPathSegment());
                             DatabaseProviderFascade.addUserToGame(userId, gameId, ApiHandler.this.contentResolver);
                         }
+
+                        // Add Challenge
+                        JSONObject challenge = gameObject.getJSONObject(KEY_CURRENT_CHALLENGE);
+                        if (challenge != null) {
+                            int challenge_server_id = challenge.getInt(KEY_ID);
+                            int status = challenge.getInt(KEY_STATUS);
+                            String hintText = challenge.getString(KEY_TEXT_HINT);
+                            String taskText = challenge.getString(KEY_TEXT_TASK);
+                            int type = challenge.getInt(KEY_STATUS);
+                            DatabaseProviderFascade.saveOrUpdateChallenge(challenge_server_id, status, hintText, taskText, type, gameId, ApiHandler.this.contentResolver);
+                        }
+
                     }
                     return true;
                 } catch (JSONException e) {
