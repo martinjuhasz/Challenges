@@ -27,6 +27,7 @@ public class Database {
         public static final String ROUNDS = "rounds";
         public static final String TITLE = "title";
         public static final String SUBMITTED = "submitted";
+        public static final String CURRENT_CHALLENGE_ID = "current_challenge_id";
 
         private static final String CREATE_TABLE =
                 "CREATE TABLE " + TABLE + "( "
@@ -34,7 +35,9 @@ public class Database {
                         + SERVER_ID + " INTEGER NOT NULL UNIQUE, "
                         + ROUNDS + " INTEGER NOT NULL, "
                         + TITLE + " TEXT NOT NULL, "
-                        + SUBMITTED + " INTEGER NOT NULL DEFAULT 0"
+                        + SUBMITTED + " INTEGER NOT NULL DEFAULT 0, "
+                        + CURRENT_CHALLENGE_ID + " INTEGER, "
+                        + "FOREIGN KEY(" + CURRENT_CHALLENGE_ID + ") REFERENCES " + Challenge.TABLE + "(" + Challenge.ID + ") "
                         + ")";
 
     }

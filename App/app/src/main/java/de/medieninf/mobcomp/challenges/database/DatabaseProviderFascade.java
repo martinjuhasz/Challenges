@@ -17,7 +17,6 @@ public class DatabaseProviderFascade {
     final static String TAG = DatabaseProviderFascade.class.getSimpleName();
 
     public static Uri saveOrUpdateGame(int server_id, String title, int game_grounds, boolean submitted, ContentResolver contentResolver) {
-
         Uri existsUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.GAME_STRING).build();
         Cursor existsCursor = contentResolver.query(existsUri, new String[]{Database.Game.ID}, Database.Game.SERVER_ID + " = ?", new String[]{String.valueOf(server_id)}, null);
         existsCursor.moveToFirst();
@@ -43,6 +42,30 @@ public class DatabaseProviderFascade {
         }
 
         return savedUri;
+    }
+
+    public static Uri setCurrentChallengeToGame(int challenge_id, int game_id, ContentResolver contentResolver) {
+        // check if game exists
+        Uri gameExistsUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.GAME_STRING).build();
+        Cursor gameExistsCursor = contentResolver.query(gameExistsUri, new String[]{Database.Game.ID}, Database.Game.ID + " = ?", new String[]{String.valueOf(game_id)}, null);
+        gameExistsCursor.moveToFirst();
+        if(gameExistsCursor.getCount() <= 0) {
+            return null;
+        }
+
+        // check if challenge exists
+        Uri challengeExistsUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.CHALLENGE_STRING).build();
+        Cursor challengeExistsCursor = contentResolver.query(challengeExistsUri, new String[]{Database.Challenge.ID}, Database.Challenge.ID + " = ?", new String[]{String.valueOf(challenge_id)}, null);
+        challengeExistsCursor.moveToFirst();
+        if(challengeExistsCursor.getCount() <= 0) {
+            return null;
+        }
+
+        Uri updateUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.GAME_STRING).appendPath(String.valueOf(game_id)).build();
+        ContentValues values = new ContentValues();
+        values.put(Database.Game.CURRENT_CHALLENGE_ID, challenge_id);
+        int updated = contentResolver.update(updateUri, values, null, null);
+        return updateUri;
     }
 
     public static Uri saveOrUpdateUser(int server_id, String username, String image, ContentResolver contentResolver) {

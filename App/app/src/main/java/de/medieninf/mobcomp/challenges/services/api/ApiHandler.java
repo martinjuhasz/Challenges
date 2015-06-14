@@ -145,9 +145,10 @@ public class ApiHandler {
                             String hintText = challenge.getString(KEY_TEXT_HINT);
                             String taskText = challenge.getString(KEY_TEXT_TASK);
                             int type = challenge.getInt(KEY_STATUS);
-                            DatabaseProviderFascade.saveOrUpdateChallenge(challenge_server_id, status, hintText, taskText, type, gameId, ApiHandler.this.contentResolver);
+                            Uri challengeUri = DatabaseProviderFascade.saveOrUpdateChallenge(challenge_server_id, status, hintText, taskText, type, gameId, ApiHandler.this.contentResolver);
+                            int challengeId = Integer.valueOf(challengeUri.getLastPathSegment());
+                            DatabaseProviderFascade.setCurrentChallengeToGame(challengeId, gameId, ApiHandler.this.contentResolver);
                         }
-
                     }
                     return true;
                 } catch (JSONException e) {
