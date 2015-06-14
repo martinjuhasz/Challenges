@@ -2,12 +2,14 @@ package de.medieninf.mobcomp.challenges.activities;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CursorAdapter;
 import android.widget.TextView;
 import de.medieninf.mobcomp.challenges.R;
+import de.medieninf.mobcomp.challenges.database.Database;
 
 
 /**
@@ -29,7 +31,8 @@ public class GameListAdapter extends CursorAdapter {
 
     @Override
     public void bindView(View view, Context context, Cursor cursor) {
-        TextView gamelistItem = (TextView)view.findViewById(R.id.gamelist_itemtext);
-        gamelistItem.setText(cursor.getString(0));
+        TextView titleTextView = (TextView)view.findViewById(R.id.gamelist_itemtext);
+        String title = cursor.getString(cursor.getColumnIndex(Database.Game.TITLE));
+        titleTextView.setText(title);
     }
 }
