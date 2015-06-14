@@ -162,4 +162,16 @@ public class DatabaseProviderFascade {
 
         return challengeCursor;
     }
+
+    public static Cursor getChallenge(int challengeID, ContentResolver contentResolver) {
+        Uri challengeUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.CHALLENGE_STRING).appendPath(String.valueOf(challengeID)).build();
+        Cursor challengeCursor = contentResolver.query(challengeUri, new String[]{Database.Challenge.ID, Database.Challenge.TEXT_HINT, Database.Challenge.TEXT_TASK}, null, null, null);
+        challengeCursor.moveToFirst();
+
+        // no current challenge exists for game
+        if (challengeCursor.getCount() <= 0) {
+            return null;
+        }
+        return challengeCursor;
+    }
 }
