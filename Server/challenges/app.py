@@ -95,3 +95,20 @@ def fill():
     db.session.commit()
 
     return "db filled"
+
+
+@app.route('/add_game')
+def add_game():
+
+    user1 = User.query.filter_by(username="Martin").first()
+    user2 = User.query.filter_by(username="Michael").first()
+
+    # add some games
+    game1 = game_controller.create_game("Game 6")
+    game1.users.append(user1)
+    game1.users.append(user2)
+
+    db.session.add_all([game1])
+    db.session.commit()
+
+    return "db filled"

@@ -129,6 +129,7 @@ public class GameService extends Service {
 
         // switch challenge type
         int challengeType = challengeCursor.getInt(challengeCursor.getColumnIndex(Database.Challenge.TYPE));
+        challengeCursor.close();
         Intent challengeIntent = null;
         switch (challengeType) {
             case 1:

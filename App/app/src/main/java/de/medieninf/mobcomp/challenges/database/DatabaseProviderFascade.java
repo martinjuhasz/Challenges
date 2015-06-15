@@ -41,6 +41,7 @@ public class DatabaseProviderFascade {
             int updated = contentResolver.update(updateUri, values, null, null);
             savedUri = updateUri;
         }
+        existsCursor.close();
 
         return savedUri;
     }
@@ -51,16 +52,20 @@ public class DatabaseProviderFascade {
         Cursor gameExistsCursor = contentResolver.query(gameExistsUri, new String[]{Database.Game.ID}, Database.Game.ID + " = ?", new String[]{String.valueOf(game_id)}, null);
         gameExistsCursor.moveToFirst();
         if(gameExistsCursor.getCount() <= 0) {
+            gameExistsCursor.close();
             return null;
         }
+        gameExistsCursor.close();
 
         // check if challenge exists
         Uri challengeExistsUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.CHALLENGE_STRING).build();
         Cursor challengeExistsCursor = contentResolver.query(challengeExistsUri, new String[]{Database.Challenge.ID}, Database.Challenge.ID + " = ?", new String[]{String.valueOf(challenge_id)}, null);
         challengeExistsCursor.moveToFirst();
         if(challengeExistsCursor.getCount() <= 0) {
+            challengeExistsCursor.close();
             return null;
         }
+        challengeExistsCursor.close();
 
         Uri updateUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.GAME_STRING).appendPath(String.valueOf(game_id)).build();
         ContentValues values = new ContentValues();
@@ -91,6 +96,7 @@ public class DatabaseProviderFascade {
             int updated = contentResolver.update(updateUri, values, null, null);
             savedUri = updateUri;
         }
+        existsCursor.close();
 
         return savedUri;
     }
@@ -136,6 +142,7 @@ public class DatabaseProviderFascade {
             int updated = contentResolver.update(updateUri, values, null, null);
             savedUri = updateUri;
         }
+        existsCursor.close();
 
         return savedUri;
     }
@@ -147,16 +154,20 @@ public class DatabaseProviderFascade {
 
         // invalid gameID
         if (gameCursor.getCount() <= 0) {
+            gameCursor.close();
             return null;
         }
 
         int challengeID = gameCursor.getInt(gameCursor.getColumnIndex(Database.Game.CURRENT_CHALLENGE_ID));
+        gameCursor.close();
+
         Uri challengeUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.CHALLENGE_STRING).appendPath(String.valueOf(challengeID)).build();
         Cursor challengeCursor = contentResolver.query(challengeUri, new String[]{Database.Challenge.ID, Database.Challenge.TYPE}, null, null, null);
         challengeCursor.moveToFirst();
 
         // no current challenge exists for game
         if (challengeCursor.getCount() <= 0) {
+            challengeCursor.close();
             return null;
         }
 
