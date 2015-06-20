@@ -6,20 +6,48 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/photochallenge_title"
+        android:text="@string/photo_challenge_title"
         android:textStyle="bold"
-        android:textSize="20dp"
+        android:textSize="20sp"
         android:paddingTop="20dp"
         android:paddingLeft="20dp" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Sample Task Text"
         android:paddingLeft="20dp"
         android:paddingRight="20dp"
         android:paddingTop="15dp"
-        android:textSize="17dp"
+        android:textSize="17sp"
         android:id="@+id/tv_photochallenge_task_text"/>
+
+    <FrameLayout
+        android:id="@+id/fl_photochallenge"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="visible">
+
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/iv_photo_challenge" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/photo_challenge_action"
+            android:id="@+id/bt_photo_challenge_action"
+            android:layout_gravity="center" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/challenge_submit"
+            android:id="@+id/bt_photo_challenge_submit"
+            android:layout_gravity="center_horizontal|bottom" />
+
+    </FrameLayout>
+
 
 </LinearLayout>

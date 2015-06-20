@@ -5,6 +5,7 @@ import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
@@ -167,6 +168,10 @@ public class GameService extends Service {
                 callListenerUserRegistrationUpdated(false);
             }
         });
+    }
+
+    public void saveChallengeSubmission(int challengeId, Uri location){
+        //TODO implement
     }
 
     public void updateGames() {

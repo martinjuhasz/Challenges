@@ -5,5 +5,7 @@
     <string name="login_username_title">Enter your desired username here:</string>
     <string name="login_submit">Submit</string>
     <string name="gamelist_current_games">Aktuelle Spiele:</string>
-    <string name="photochallenge_title">Bilder-Challenge</string>
+    <string name="photo_challenge_title">Bilder-Challenge</string>
+    <string name="photo_challenge_action">Foto machen</string>
+    <string name="challenge_submit">absenden</string>
 </resources>
