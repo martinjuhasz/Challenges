@@ -75,6 +75,10 @@ public class Database {
                         + ")";
     }
 
+    public class UserLogin {
+
+    }
+
     public class Challenge {
         public static final String TABLE = "challenges";
         public static final String ID = "_id";
@@ -98,6 +102,24 @@ public class Database {
                         + ")";
     }
 
+    public class Submission {
+        public static final String TABLE = "submissions";
+        public static final String ID = "_id";
+        public static final String CHALLENGE_ID = "challenge_id";
+        public static final String USER_ID = "user_id";
+        public static final String CONTENT_URI = "content_uri";
+
+        private static final String CREATE_TABLE =
+                "CREATE TABLE " + TABLE + "( "
+                        + ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                        + CHALLENGE_ID + " INTEGER NOT NULL, "
+                        + USER_ID + " INTEGER NOT NULL, "
+                        + CONTENT_URI + " TEXT NOT NULL, "
+                        + "FOREIGN KEY(" + CHALLENGE_ID + ") REFERENCES " + Challenge.TABLE + "(" + Challenge.ID + ") ON DELETE CASCADE, "
+                        + "FOREIGN KEY(" + USER_ID + ") REFERENCES " + User.TABLE + "(" + User.ID + ") ON DELETE CASCADE "
+                        + ")";
+    }
+
     private static class DBHelper extends SQLiteOpenHelper {
 
         public DBHelper(Context context, String name, SQLiteDatabase.CursorFactory factory, int version) {
@@ -110,6 +132,7 @@ public class Database {
             db.execSQL(User.CREATE_TABLE);
             db.execSQL(UserGames.CREATE_TABLE);
             db.execSQL(Challenge.CREATE_TABLE);
+            db.execSQL(Submission.CREATE_TABLE);
         }
 
         @Override
@@ -118,6 +141,7 @@ public class Database {
             db.execSQL("DROP TABLE IF EXISTS " + UserGames.TABLE);
             db.execSQL("DROP TABLE IF EXISTS " + User.TABLE);
             db.execSQL("DROP TABLE IF EXISTS " + Game.TABLE);
+            db.execSQL("DROP TABLE IF EXISTS " + Submission.TABLE);
             onCreate(db);
         }
     }

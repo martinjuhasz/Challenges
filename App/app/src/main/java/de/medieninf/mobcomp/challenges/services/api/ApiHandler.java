@@ -33,6 +33,7 @@ public class ApiHandler {
     public static final String GAME_RESSOURCE = "games";
     public static final String KEY_USERNAME = "username";
     public static final String KEY_TOKEN = "token";
+    public static final String KEY_USER_ID = "id";
     public static final String KEY_DATA = "data";
     public static final String KEY_ID = "id";
     public static final String KEY_TITLE = "title";
@@ -85,15 +86,20 @@ public class ApiHandler {
 
             @Override
             protected boolean onDataReceived(JSONObject returnObject) {
-                if (!returnObject.has(KEY_TOKEN)) {
+                if (!returnObject.has(KEY_TOKEN) && !returnObject.has(KEY_USER_ID)) {
                     return false;
                 }
 
                 String userToken = null;
+                int userId;
                 try {
                     userToken = returnObject.getString(KEY_TOKEN);
+                    userId = returnObject.getInt(KEY_USER_ID);
                     SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-                    sharedPreferences.edit().putString(GameService.TOKEN_KEY, userToken).apply();
+                    sharedPreferences.edit()
+                            .putString(GameService.TOKEN_KEY, userToken)
+                            .putInt(GameService.USER_ID_KEY, userId)
+                            .apply();
                     return true;
                 } catch (JSONException e) {
                     return false;

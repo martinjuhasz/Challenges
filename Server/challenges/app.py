@@ -5,6 +5,8 @@ from flask import Flask
 from flask import request, jsonify
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import exc
+from werkzeug import secure_filename
+from StringIO import StringIO
 
 app = Flask(__name__)
 app.config.from_object('config.Config')
@@ -52,12 +54,29 @@ def create_user():
         # TODO: REMOVE!! only temp login
         db.session.rollback()
         user = User.query.filter_by(username=request_json['username']).first()
-        return jsonify({'token': user.token})
+        return jsonify({'id' : user.id, 'token': user.token})
 
         return jsonify({'error_code': "USER_TAKEN"})
 
-    return jsonify({'token': user.token})
+    return jsonify({'id' : user.id, 'token': user.token})
 
+@app.route('/binary', methods=['POST'])
+def binary_post():
+    "store a binary in the database returning its meta-data as json"
+    uploaded_file = request.files['file']
+    # if not uploaded_file or not util.allowed_file(uploaded_file.filename):
+    #     return jsonify({'error': 'no file or filename not allowed'}), 415
+    filename = secure_filename(uploaded_file.filename)
+    sio_buffer = StringIO()
+    uploaded_file.save(sio_buffer)
+    blob = sio_buffer.getvalue()
+    con = db.engine.raw_connection();
+    lob = con.lobject(0, "wb")
+    lob.write(blob)
+    oid = lob.oid
+    con.commit()
+    con.close()
+    return jsonify({'oid':oid})
 
 @app.route('/fill_db')
 def fill():

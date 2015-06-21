@@ -29,6 +29,7 @@ import de.medieninf.mobcomp.challenges.services.api.ApiHandlerCallback;
  */
 public class GameService extends Service {
 
+
     // inner classes
     public class GameServiceBinder extends Binder {
         public GameService getService() {
@@ -38,12 +39,14 @@ public class GameService extends Service {
 
     // statics
     public static final String TOKEN_KEY = "constant_usertoken";
+    public static final String USER_ID_KEY = "constant_user_id";
     public static final String EXTRA_KEY_CHALLENGE_ID = "EXTRA_KEY_CHALLENGE_ID";
 
     // instance variables
     final static String TAG = GameService.class.getSimpleName();
     private IBinder binder;
     private String userToken;
+    private int userId;
     private ApiHandler apiHandler;
     private ContentResolver contentResolver;
     private List<WeakReference<GameServiceListener>> listeners;
@@ -54,6 +57,7 @@ public class GameService extends Service {
 
         this.binder = new GameServiceBinder();
         setUserTokenFromPreferences();
+        setUserIdFromPreferences();
         this.contentResolver = getContentResolver();
         this.apiHandler = new ApiHandler(getString(R.string.constant_server_url), this, this.userToken, this.contentResolver);
         this.listeners = new ArrayList<>();
@@ -61,7 +65,7 @@ public class GameService extends Service {
 
     public void addListener(GameServiceListener listener) {
         // test if listener already in list
-        for (Iterator<WeakReference<GameServiceListener>> iterator = this.listeners.iterator(); iterator.hasNext();) {
+        for (Iterator<WeakReference<GameServiceListener>> iterator = this.listeners.iterator(); iterator.hasNext(); ) {
             WeakReference<GameServiceListener> weakRef = iterator.next();
             if (weakRef.get() == listener) {
                 return;
@@ -74,7 +78,7 @@ public class GameService extends Service {
 
     public void removeListener(GameServiceListener listener) {
         // test if listener is in list
-        for (Iterator<WeakReference<GameServiceListener>> iterator = this.listeners.iterator(); iterator.hasNext();) {
+        for (Iterator<WeakReference<GameServiceListener>> iterator = this.listeners.iterator(); iterator.hasNext(); ) {
             WeakReference<GameServiceListener> weakRef = iterator.next();
             // clean empty refs when already iterating
             if (weakRef.get() == null) {
@@ -88,7 +92,7 @@ public class GameService extends Service {
     }
 
     private void callListenerUserRegistrationUpdated(boolean successfully) {
-        for (Iterator<WeakReference<GameServiceListener>> iterator = this.listeners.iterator(); iterator.hasNext();) {
+        for (Iterator<WeakReference<GameServiceListener>> iterator = this.listeners.iterator(); iterator.hasNext(); ) {
             WeakReference<GameServiceListener> weakRef = iterator.next();
             // clean empty refs when already iterating
             if (weakRef.get() == null) {
@@ -159,6 +163,7 @@ public class GameService extends Service {
             @Override
             public void requestFinished() {
                 setUserTokenFromPreferences();
+                setUserIdFromPreferences();
                 callListenerUserRegistrationUpdated(true);
             }
 
@@ -170,8 +175,8 @@ public class GameService extends Service {
         });
     }
 
-    public void saveChallengeSubmission(int challengeId, Uri location){
-        //TODO implement
+    public void saveChallengeSubmission(int challengeId, Uri location) {
+        DatabaseProviderFascade.saveSubmission(challengeId, this.userId, location, this.contentResolver);
     }
 
     public void updateGames() {
@@ -198,5 +203,10 @@ public class GameService extends Service {
                 this.apiHandler.setAuthToken(this.userToken);
             }
         }
+    }
+
+    private void setUserIdFromPreferences() {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+        this.userId = sharedPreferences.getInt(USER_ID_KEY, 0);
     }
 }

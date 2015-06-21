@@ -26,6 +26,7 @@ public class DatabaseProvider extends ContentProvider {
     public static final String USER_STRING = "users";
     public static final String USERGAMES_STRING = "usergames";
     public static final String CHALLENGE_STRING = "challenges";
+    public static final String SUBMISSION_STRING = "submissions";
     private static final int GAMES_ID = 1;
     private static final int GAME_ID = 2;
     private static final int USER_ID = 3;
@@ -33,7 +34,7 @@ public class DatabaseProvider extends ContentProvider {
     private static final int USERGAMES_ID = 5;
     private static final int CHALLENGE_ID = 6;
     private static final int CHALLENGES_ID = 7;
-
+    private static final int SUBMISSIONS_ID = 8;
 
     // URI Matcher
     private static final UriMatcher uriMatcher;
@@ -54,6 +55,9 @@ public class DatabaseProvider extends ContentProvider {
         // /challenges /challenges/<id>
         uriMatcher.addURI(AUTHORITY, CHALLENGE_STRING, CHALLENGES_ID);
         uriMatcher.addURI(AUTHORITY, CHALLENGE_STRING+"/#", CHALLENGE_ID);
+
+        // /submissions
+        uriMatcher.addURI(AUTHORITY, SUBMISSION_STRING, SUBMISSIONS_ID);
 
     }
 
@@ -78,6 +82,7 @@ public class DatabaseProvider extends ContentProvider {
             case USERS_ID:
             case USERGAMES_ID:
             case CHALLENGES_ID:
+            case SUBMISSIONS_ID:
                 return VND_HIGHSCORE_DIR;
             default:
                 Log.e(TAG, "getType, uri not supported " + uri);
@@ -106,6 +111,8 @@ public class DatabaseProvider extends ContentProvider {
                 return database.getDatabase().query(Database.Challenge.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
             case CHALLENGES_ID:
                 return database.getDatabase().query(Database.Challenge.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
+            case SUBMISSIONS_ID:
+                return database.getDatabase().query(Database.Submission.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
         }
         Log.e(TAG, "query, no matching uri " + uri);
         return null;
@@ -145,6 +152,13 @@ public class DatabaseProvider extends ContentProvider {
                     return null;
                 }
                 return CONTENT_URI.buildUpon().appendPath(CHALLENGE_STRING).appendPath(String.valueOf(challenge_id)).build();
+            case SUBMISSIONS_ID:
+                long submission_id = database.getDatabase().insertOrThrow(Database.Submission.TABLE, null, values);
+                if(submission_id == -1) {
+                    Log.e(TAG, "insert, couldnt insert");
+                    return null;
+                }
+                return CONTENT_URI.buildUpon().appendPath(SUBMISSION_STRING).appendPath(String.valueOf(submission_id)).build();
         }
         return null;
     }
@@ -169,6 +183,8 @@ public class DatabaseProvider extends ContentProvider {
                 selection = addId(selection, challenge_id, Database.Challenge.ID);
                 return database.getDatabase().delete(Database.Challenge.TABLE, selection, selectionArgs);
             case CHALLENGES_ID:
+                return database.getDatabase().delete(Database.Challenge.TABLE, selection, selectionArgs);
+            case SUBMISSIONS_ID:
                 return database.getDatabase().delete(Database.Challenge.TABLE, selection, selectionArgs);
             default:
                 Log.e(TAG, "delete, no matching URI " + uri);

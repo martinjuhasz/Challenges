@@ -101,6 +101,18 @@ public class DatabaseProviderFascade {
         return savedUri;
     }
 
+
+    public static Uri saveSubmission(int challengeId, int userId, Uri contentUri, ContentResolver contentResolver) {
+        Uri submissionUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.SUBMISSION_STRING).build();
+        Uri savedUri = null;
+        ContentValues values = new ContentValues();
+        values.put(Database.Submission.CHALLENGE_ID, challengeId);
+        values.put(Database.Submission.USER_ID, userId);
+        values.put(Database.Submission.CONTENT_URI, contentUri.toString());
+        savedUri = contentResolver.insert(submissionUri, values);
+        return savedUri;
+    }
+
     public static Uri addUserToGame(int user_id, int game_id, ContentResolver contentResolver) {
         Uri savedUri = null;
         try {
@@ -185,4 +197,5 @@ public class DatabaseProviderFascade {
         }
         return challengeCursor;
     }
+
 }
