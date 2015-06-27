@@ -177,6 +177,17 @@ public class GameService extends Service {
 
     public void saveChallengeSubmission(int challengeId, Uri location) {
         DatabaseProviderFascade.saveSubmission(challengeId, this.userId, location, this.contentResolver);
+        apiHandler.uploadBinary(new ApiHandlerCallback() {
+            @Override
+            public void requestFailed(ApiHandler.ErrorCode errorCode) {
+                Log.i(TAG, "save submission request failed: " + errorCode);
+            }
+
+            @Override
+            public void requestFinished() {
+                Log.i(TAG, "save submission request finished: ");
+            }
+        }, challengeId, location, getContentResolver());
     }
 
     public void updateGames() {

@@ -3,13 +3,22 @@ package de.medieninf.mobcomp.challenges.services.api;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.Uri;
+import android.os.ParcelFileDescriptor;
 import android.preference.PreferenceManager;
+import android.provider.OpenableColumns;
 import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 import de.medieninf.mobcomp.challenges.database.DatabaseProviderFascade;
 import de.medieninf.mobcomp.challenges.external.HttpRequest;
@@ -31,6 +40,7 @@ public class ApiHandler {
     // API Constants
     public static final String USER_RESSOURCE = "users";
     public static final String GAME_RESSOURCE = "games";
+    public static final String BINARY_RESSOURCE = "binary";
     public static final String KEY_USERNAME = "username";
     public static final String KEY_TOKEN = "token";
     public static final String KEY_USER_ID = "id";
@@ -160,6 +170,28 @@ public class ApiHandler {
                 } catch (JSONException e) {
                     return false;
                 }
+            }
+        };
+        asyncTask.execute();
+    }
+
+    public void uploadBinary(final ApiHandlerCallback callback, int challengeId, final Uri location, final ContentResolver contentResolver){
+        ApiHandlerAsyncTask asyncTask = new ApiHandlerAsyncTask(callback) {
+            @Override
+            protected HttpRequest onPrepareRequest() {
+                String url = serverUrl + "/" + BINARY_RESSOURCE;
+
+                File file = new File(location.getPath());
+
+
+                String testPart = "{test:'test'}";
+                String mimeType = "image/jpg";
+                Log.i(TAG, "file size: " + file.length() + ", name size: " + file.getName().getBytes().length);
+                long contentLength = file.length();
+                contentLength += file.getName().getBytes().length;
+                contentLength += mimeType.getBytes().length;
+                contentLength += 128;
+                return HttpRequest.post(url).contentLength((int) contentLength).part("file", file.getName(), "image/jpg", file);
             }
         };
         asyncTask.execute();
