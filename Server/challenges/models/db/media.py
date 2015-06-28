@@ -10,9 +10,12 @@ class Media(db.Model):
     filename = Column(TEXT, nullable=False)
     mimetype = Column(TEXT)
     binsize = Column(INTEGER, nullable=False)
+    user_id = db.Column(db.INTEGER, db.ForeignKey('users.id'))
+    challenge_id = db.Column(db.INTEGER, db.ForeignKey('challenges.id'))
 
     def to_dict(self):
         return {
+            "user_id": self.user_id,
             'oid': self.oid,
             'filename': self.filename,
             'mimetype': self.mimetype,

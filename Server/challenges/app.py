@@ -13,10 +13,11 @@ app.config.from_object('config.Config')
 db = SQLAlchemy(app)
 
 from challenges.models.db.user import User
+from challenges.models.db.challenge import Challenge
 from challenges.models.db.challenge_task import ChallengeTask
 from challenges.models.db.challenge_type import ChallengeType
+from challenges.models.db.media import Media
 from controller.game_controller import GameController
-from models.db.media import Media
 
 game_controller = GameController(db)
 
@@ -105,8 +106,37 @@ def find_user():
 
     return jsonify({'id': user.id, 'username': user.username, 'image': None})
 
+@app.route('/challenge/<int:challenge_id>/submissions', methods=["GET"])
+def challenge_submissions(challenge_id):
+    submissions = Media.query.filter_by(challenge_id = challenge_id).all()
+    return jsonify({'data:': [submission.to_dict() for submission in submissions]})
 
-@app.route("/binary/<int:oid>/meta")
+@app.route('/challenge/<int:challenge_id>/submission', methods=["POST"])
+def link_submission(challenge_id):
+    current_user = user_authenticated()
+    if not current_user:
+        return "", 403
+
+    request_json = request.get_json(force=True, silent=True)
+    if not request_json or not request_json['oid']:
+        return "", 400
+
+    oid = request_json['oid']
+
+    challenge = Challenge.query.filter_by(id = challenge_id).first()
+
+    if not challenge:
+        return "", 403
+
+    media = Media.query.filter_by(oid=oid).first()
+    media.challenge_id = challenge_id
+
+    db.session.commit()
+
+    return jsonify()
+
+
+@app.route("/binary/<int:oid>/meta", methods=["GET"])
 def binary_meta(oid):
     """retrieve the meta information of a binary as json"""
     media = Media.query.filter_by(oid=oid).first()
@@ -144,8 +174,11 @@ def binary(oid):
 def binary_post():
     """store a binary in the database returning its meta-data as json"""
     uploaded_file = request.files['file']
-    # if not uploaded_file or not util.allowed_file(uploaded_file.filename):
-    #     return jsonify({'error': 'no file or filename not allowed'}), 415
+
+    current_user = user_authenticated()
+    if not current_user:
+        return "", 403
+
     filename = secure_filename(uploaded_file.filename)
     mimetype = uploaded_file.mimetype
     con = db.engine.raw_connection()
@@ -162,7 +195,7 @@ def binary_post():
     con.commit()
     con.close()
 
-    media = Media(oid=oid, filename=filename, mimetype=mimetype, binsize=binsize)
+    media = Media(oid=oid, filename=filename, mimetype=mimetype, binsize=binsize, user_id = current_user.id)
     db.session.add(media)
     db.session.commit()
     return jsonify({'oid': oid})
