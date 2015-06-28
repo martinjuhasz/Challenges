@@ -29,6 +29,8 @@ import de.medieninf.mobcomp.challenges.services.api.ApiHandlerCallback;
  */
 public class GameService extends Service {
 
+    private GameController gameController;
+
 
     // inner classes
     public class GameServiceBinder extends Binder {
@@ -56,11 +58,18 @@ public class GameService extends Service {
         super.onCreate();
 
         this.binder = new GameServiceBinder();
-        setUserTokenFromPreferences();
-        setUserIdFromPreferences();
         this.contentResolver = getContentResolver();
         this.apiHandler = new ApiHandler(getString(R.string.constant_server_url), this, this.userToken, this.contentResolver);
         this.listeners = new ArrayList<>();
+
+        this.gameController = new GameController(this.apiHandler, this, this.contentResolver);
+
+        setUserTokenFromPreferences();
+        setUserIdFromPreferences();
+    }
+
+    public GameController getGameController() {
+        return gameController;
     }
 
     public void addListener(GameServiceListener listener) {
@@ -177,15 +186,16 @@ public class GameService extends Service {
 
     public void saveChallengeSubmission(int challengeId, Uri location) {
         DatabaseProviderFascade.saveSubmission(challengeId, this.userId, location, this.contentResolver);
-        apiHandler.uploadBinary(new ApiHandlerCallback() {
-            @Override
-            public void requestFailed(ApiHandler.ErrorCode errorCode) {
-                Log.i(TAG, "save submission request failed: " + errorCode);
-            }
 
+        apiHandler.uploadBinary(new ApiHandlerCallback() {
             @Override
             public void requestFinished() {
                 Log.i(TAG, "save submission request finished: ");
+            }
+
+            @Override
+            public void requestFailed(ApiHandler.ErrorCode errorCode) {
+                Log.i(TAG, "save submission request failed: " + errorCode);
             }
         }, challengeId, location, getContentResolver());
     }

@@ -14,6 +14,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.CursorAdapter;
 import android.widget.ListView;
 import de.medieninf.mobcomp.challenges.R;
@@ -34,6 +35,7 @@ public class GameListActivity extends Activity implements GameServiceListener {
 
     // GUI Elements
     private ListView gamesList;
+    private Button newGameButton;
 
     GameListLoader loader;
 
@@ -44,9 +46,16 @@ public class GameListActivity extends Activity implements GameServiceListener {
         setContentView(R.layout.activity_game_list);
 
         // GUI
-
-        //ListView + Loader
         gamesList = (ListView) findViewById(R.id.gamelist_listview);
+        newGameButton = (Button)findViewById(R.id.btn_game_list_start_game);
+
+        newGameButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                newGameButtonClicked();
+            }
+        });
+
         // create adapter
         GameListAdapter gameListAdapter = new GameListAdapter(this);
         gamesList.setAdapter(gameListAdapter);
@@ -147,6 +156,11 @@ public class GameListActivity extends Activity implements GameServiceListener {
         if (challengeIntent != null) {
             startActivity(challengeIntent);
         }
+    }
+
+    private void newGameButtonClicked() {
+        Intent newGameIntent = new Intent(this, StartGameActivity.class);
+        startActivity(newGameIntent);
     }
 
     @Override

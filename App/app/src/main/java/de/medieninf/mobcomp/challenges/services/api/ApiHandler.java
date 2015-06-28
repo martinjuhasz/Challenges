@@ -38,6 +38,7 @@ public class ApiHandler {
     }
 
     // API Constants
+    public static final String FINDUSER_RESSOURCE = "users/find";
     public static final String USER_RESSOURCE = "users";
     public static final String GAME_RESSOURCE = "games";
     public static final String BINARY_RESSOURCE = "binary";
@@ -77,7 +78,7 @@ public class ApiHandler {
 
     public void createUser(final String username, final ApiHandlerCallback callback) {
 
-        ApiHandlerAsyncTask asyncTask = new ApiHandlerAsyncTask(callback, this.authToken) {
+        ApiHandlerAsyncTask asyncTask = new ApiHandlerAsyncTask(callback) {
             @Override
             protected HttpRequest onPrepareRequest() {
                 // build url
@@ -91,7 +92,7 @@ public class ApiHandler {
                     return null;
                 }
 
-                return HttpRequest.post(url).send(payloadObject.toString());
+                return HttpRequest.post(url).header(HEADER_TOKEN, ApiHandler.this.authToken).send(payloadObject.toString());
             }
 
             @Override
@@ -119,12 +120,49 @@ public class ApiHandler {
         asyncTask.execute();
     }
 
+    public void userExists(final String username, final ApiHandlerCallback callback) {
+
+        ApiHandlerAsyncTask asyncTask = new ApiHandlerAsyncTask(callback) {
+            @Override
+            protected HttpRequest onPrepareRequest() {
+                // build url
+                String url = serverUrl + "/" + FINDUSER_RESSOURCE;
+
+                // build json payload
+                JSONObject payloadObject = new JSONObject();
+                try {
+                    payloadObject.put(KEY_USERNAME, username);
+                } catch (JSONException e) {
+                    return null;
+                }
+
+                return HttpRequest.post(url).header(HEADER_TOKEN, ApiHandler.this.authToken).send(payloadObject.toString());
+            }
+
+            @Override
+            protected boolean onDataReceived(JSONObject user) {
+                Log.i(TAG, user.toString());
+                try {
+                    int user_server_id = user.getInt(KEY_ID);
+                    String username = user.getString(KEY_USERNAME);
+                    String image = user.getString(KEY_IMAGE);
+                    Uri userUri = DatabaseProviderFascade.saveOrUpdateUser(user_server_id, username, image, ApiHandler.this.contentResolver);
+                    return true;
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    return false;
+                }
+            }
+        };
+        asyncTask.execute();
+    }
+
     public void getGames(final ApiHandlerCallback callback) {
-        ApiHandlerAsyncTask asyncTask = new ApiHandlerAsyncTask(callback, this.authToken) {
+        ApiHandlerAsyncTask asyncTask = new ApiHandlerAsyncTask(callback) {
             @Override
             protected HttpRequest onPrepareRequest() {
                 String url = serverUrl + "/" + GAME_RESSOURCE;
-                return HttpRequest.get(url);
+                return HttpRequest.get(url).header(HEADER_TOKEN, ApiHandler.this.authToken);
             }
 
             @Override
@@ -193,6 +231,8 @@ public class ApiHandler {
                 contentLength += 128;
                 return HttpRequest.post(url).contentLength((int) contentLength).part("file", file.getName(), "image/jpg", file);
             }
+
+
         };
         asyncTask.execute();
     }

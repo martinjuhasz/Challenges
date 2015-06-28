@@ -6,7 +6,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/photo_challenge_title"
+        android:text="@string/photochallenge_title"
         android:textStyle="bold"
         android:textSize="20sp"
         android:paddingTop="20dp"

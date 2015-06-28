@@ -62,6 +62,18 @@ def create_user():
     return jsonify({'id': user.id, 'token': user.token})
 
 
+@app.route('/users/find', methods=['POST'])
+def find_user():
+    request_json = request.get_json(force=True, silent=True)
+    if not request_json or not request_json['username']:
+        return "", 400
+
+
+    user = User.query.filter_by(username=request_json['username']).first()
+    print user
+    return jsonify({'id': user.id, 'username': user.username, 'image': None})
+
+
 @app.route("/binary/<int:oid>/meta")
 def binary_meta(oid):
     """retrieve the meta information of a binary as json"""
