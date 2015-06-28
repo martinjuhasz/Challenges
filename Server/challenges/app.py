@@ -30,14 +30,43 @@ def user_authenticated():
     return None
 
 
-@app.route('/games')
-def games():
+@app.route('/games', methods=['GET'])
+def get_games():
     current_user = user_authenticated()
     if not current_user:
         return "", 403
 
     user_games = game_controller.get_games(current_user)
     json = jsonify({'data': [game.to_dict() for game in user_games]})
+    return json
+
+@app.route('/games', methods=['POST'])
+def games():
+    current_user = user_authenticated()
+    if not current_user:
+        return "", 403
+
+    request_json = request.get_json(force=True, silent=True)
+    if not request_json or not request_json['title']:
+        return "", 400
+    if not request_json or not request_json['users']:
+        return "", 400
+
+    title = request_json['title']
+    users_ids = request_json['users']
+
+    if len(users_ids) <= 0:
+        return "", 400
+
+    game = game_controller.create_game(title)
+    for user_id in users_ids:
+        user = User.query.filter_by(id=user_id).first()
+        game.users.append(user)
+
+    db.session.add(game)
+    db.session.commit()
+
+    json = jsonify(game.to_dict())
     return json
 
 
@@ -70,7 +99,10 @@ def find_user():
 
 
     user = User.query.filter_by(username=request_json['username']).first()
-    print user
+
+    if not user:
+        return "", 404
+
     return jsonify({'id': user.id, 'username': user.username, 'image': None})
 
 

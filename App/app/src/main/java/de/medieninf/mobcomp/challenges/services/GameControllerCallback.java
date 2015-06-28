@@ -8,4 +8,8 @@ public class GameControllerCallback {
     public void userAdded(boolean successfully) {
 
     }
+
+    public void gameCreated(boolean successfully) {
+
+    }
 }

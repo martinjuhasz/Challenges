@@ -12,4 +12,5 @@
     <string name="add_game_add_user_button_text">+</string>
     <string name="photo_challenge_action">Foto machen</string>
     <string name="challenge_submit">absenden</string>
+    <string name="action_startgame">Start Game</string>
 </resources>

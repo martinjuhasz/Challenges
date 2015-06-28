@@ -8,6 +8,8 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.PersistableBundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -87,6 +89,35 @@ public class StartGameActivity extends Activity {
         }
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_new_game, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.action_startgame) {
+            startGameButtonClicked();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void setNewUsersListAdapter() {
+        if (gameService == null || gameService.getGameController().getNewGameUsers().size() <= 0) {
+            return;
+        }
+
+        this.newGameUserLoader = new NewGameUserLoader(this.newGameUserAdapter, this, gameService.getGameController().getNewGameUsers());
+        getLoaderManager().restartLoader(NewGameUserLoader.ID, null, this.newGameUserLoader);
+
+    }
+
     private void addUserButtonClicked() {
         if (gameService == null) {
             return;
@@ -111,13 +142,29 @@ public class StartGameActivity extends Activity {
         });
     }
 
-    private void setNewUsersListAdapter() {
-        if (gameService == null || gameService.getGameController().getNewGameUsers().size() <= 0) {
+    private void startGameButtonClicked() {
+        if (gameService == null) {
             return;
         }
 
-        this.newGameUserLoader = new NewGameUserLoader(this.newGameUserAdapter, this, gameService.getGameController().getNewGameUsers());
-        getLoaderManager().restartLoader(NewGameUserLoader.ID, null, this.newGameUserLoader);
+        String title = titleText.getText().toString();
+        if (title.trim().isEmpty()) {
+            // TODO: implement visual error
+            return;
+        }
 
+        if (gameService.getGameController().getNewGameUsers().size() <= 0) {
+            // TODO: implement visual error
+            return;
+        }
+
+        gameService.getGameController().startNewGame(title, new GameControllerCallback(){
+            @Override
+            public void gameCreated(boolean successfully) {
+                if (successfully) {
+                    finish();
+                }
+            }
+        });
     }
 }

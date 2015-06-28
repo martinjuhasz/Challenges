@@ -42,7 +42,7 @@ public class NewGameUserLoader implements LoaderManager.LoaderCallbacks<Cursor> 
     }
 
     private void setSelectionFromUsers() {
-        String newSelection = Database.User.ID + " IN (";
+        String newSelection = Database.User.SERVER_ID + " IN (";
         List<String> newSelectionArgs = new ArrayList<>();
         for (int i = 0; i < userIds.size(); i++) {
             newSelection += "?";

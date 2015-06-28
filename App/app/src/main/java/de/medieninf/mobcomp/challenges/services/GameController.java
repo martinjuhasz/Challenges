@@ -38,7 +38,7 @@ public class GameController {
     }
 
     public void addUserToNewGame(final String username, final GameControllerCallback callback) {
-        apiHandler.userExists(username, new ApiHandlerCallback(){
+        apiHandler.userExists(username, new ApiHandlerCallback() {
             @Override
             public void requestFinished() {
                 addUserFromDatabase(username);
@@ -53,10 +53,25 @@ public class GameController {
         });
     }
 
+    public void startNewGame(String title, final GameControllerCallback callback) {
+        apiHandler.createGame(title, this.newGameUsers, new ApiHandlerCallback(){
+            @Override
+            public void requestFinished() {
+                GameController.this.newGameUsers = new ArrayList<>();
+                callback.gameCreated(true);
+            }
+
+            @Override
+            public void requestFailed(ApiHandler.ErrorCode errorCode) {
+                callback.gameCreated(false);
+            }
+        });
+    }
+
     private void addUserFromDatabase(String username) {
         Uri userUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.USER_STRING).build();
         ContentValues values = new ContentValues();
-        String[] projection = {Database.User.ID};
+        String[] projection = {Database.User.ID, Database.User.SERVER_ID};
         String selection = Database.User.USERNAME + " = ?";
         String[] selectionArgs= {username};
 
@@ -64,7 +79,7 @@ public class GameController {
         Cursor userCursor = contentResolver.query(userUri, projection, selection, selectionArgs, null);
         userCursor.moveToFirst();
 
-        int userid = userCursor.getInt(userCursor.getColumnIndex(Database.User.ID));
+        int userid = userCursor.getInt(userCursor.getColumnIndex(Database.User.SERVER_ID));
 
         if (!newGameUsers.contains(userid)) {
             newGameUsers.add(new Integer(userid));
