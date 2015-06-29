@@ -1,3 +1,5 @@
+.idea
+Server/venv
 virtualenv/
 .DS_Store
 Server/.idea/Server.iml
