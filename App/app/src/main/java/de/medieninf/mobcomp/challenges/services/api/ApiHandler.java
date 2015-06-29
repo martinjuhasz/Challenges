@@ -26,6 +26,7 @@ import de.medieninf.mobcomp.challenges.database.DatabaseProviderFascade;
 import de.medieninf.mobcomp.challenges.external.HttpRequest;
 import de.medieninf.mobcomp.challenges.services.GameService;
 import de.medieninf.mobcomp.challenges.services.api.tasks.ApiHandlerAsyncTask;
+import de.medieninf.mobcomp.challenges.services.api.tasks.SimpleAsyncTask;
 
 /**
  * Created by Martin Juhasz on 07/06/15.
@@ -222,10 +223,37 @@ public class ApiHandler {
         asyncTask.execute();
     }
 
+//    public void uploadBinary(final ApiHandlerCallback callback, int challengeId, final Uri location, final ContentResolver contentResolver){
+//        ApiHandlerAsyncTask asyncTask = new ApiHandlerAsyncTask(callback) {
+//            @Override
+//            protected HttpRequest onPrepareRequest() {
+//                String url = serverUrl + "/" + BINARY_RESSOURCE;
+//
+//                File file = new File(location.getPath());
+//
+//
+//                String testPart = "{test:'test'}";
+//                String mimeType = "image/jpg";
+//                Log.i(TAG, "file size: " + file.length() + ", name size: " + file.getName().getBytes().length);
+//                long contentLength = file.length();
+//                contentLength += file.getName().getBytes().length;
+//                contentLength += mimeType.getBytes().length;
+//                contentLength += 128;
+//                return HttpRequest.post(url).header(HEADER_TOKEN, ApiHandler.this.authToken).contentLength((int) contentLength).part("file", file.getName(), "image/jpg", file);
+//            }
+//
+//            @Override
+//            protected boolean onDataReceived(JSONObject returnObject) {
+//                return super.onDataReceived(returnObject);
+//            }
+//        };
+//        asyncTask.execute();
+//    }
+
     public void uploadBinary(final ApiHandlerCallback callback, int challengeId, final Uri location, final ContentResolver contentResolver){
-        ApiHandlerAsyncTask asyncTask = new ApiHandlerAsyncTask(callback) {
+        SimpleAsyncTask asyncTask = new SimpleAsyncTask(callback){
             @Override
-            protected HttpRequest onPrepareRequest() {
+            protected void doInBackground() throws ApiHandlerException {
                 String url = serverUrl + "/" + BINARY_RESSOURCE;
 
                 File file = new File(location.getPath());
@@ -238,10 +266,12 @@ public class ApiHandler {
                 contentLength += file.getName().getBytes().length;
                 contentLength += mimeType.getBytes().length;
                 contentLength += 128;
-                return HttpRequest.post(url).header(HEADER_TOKEN, ApiHandler.this.authToken).contentLength((int) contentLength).part("file", file.getName(), "image/jpg", file);
+                HttpRequest request = HttpRequest.post(url).header(HEADER_TOKEN, ApiHandler.this.authToken).contentLength((int) contentLength).part("file", file.getName(), "image/jpg", file);
+
+                JSONObject jsonObject = requestJSON(request);
+
+                //Was mit der Response machen
             }
-
-
         };
         asyncTask.execute();
     }
@@ -276,6 +306,61 @@ public class ApiHandler {
             Uri challengeUri = DatabaseProviderFascade.saveOrUpdateChallenge(challenge_server_id, status, hintText, taskText, type, gameId, ApiHandler.this.contentResolver);
             int challengeId = Integer.valueOf(challengeUri.getLastPathSegment());
             DatabaseProviderFascade.setCurrentChallengeToGame(challengeId, gameId, ApiHandler.this.contentResolver);
+        }
+    }
+
+    private JSONObject requestJSON(HttpRequest request) throws ApiHandlerException{
+        try {
+            if (request != null && request.ok()) {
+
+                // extract response json object if needed
+                String response = request.body();
+                if (response.trim().isEmpty()) {
+                    return null;
+                }
+
+                JSONObject jsonObject = new JSONObject(response);
+                if (jsonObject == null) {
+                    return null;
+                }
+
+                ErrorCode errorCode = getErrorCode(jsonObject);
+
+                if(errorCode != null){
+                    throw new ApiHandlerException(errorCode);
+                }
+
+
+                return jsonObject;
+            } else {
+                throw new ApiHandlerException(ErrorCode.FAILED_REQUEST);
+            }
+
+        } catch (HttpRequest.HttpRequestException exception) {
+            exception.printStackTrace();
+            throw new ApiHandlerException(ErrorCode.FAILED_REQUEST);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private ErrorCode getErrorCode(JSONObject jsonObject) {
+        // response body is empty or not an jsonobject
+        if (jsonObject == null) {
+            return null;
+        }
+
+        if(!jsonObject.has("error_code")) {
+            return null;
+        }
+
+        try {
+            int errorCode = jsonObject.getInt("error_code");
+            // TODO: implement conversion from web error codes into enum values
+            return null;
+        } catch (JSONException e) {
+            return null;
         }
     }
 }
