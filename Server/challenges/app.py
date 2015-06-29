@@ -23,7 +23,7 @@ game_controller = GameController(db)
 
 
 def user_authenticated():
-    token = request.headers.get('challenge_user_token')
+    token = request.headers.get('CHALLENGEUSERTOKEN')
     if token:
         user = User.query.filter_by(token=token).first()
         if user:

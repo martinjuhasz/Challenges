@@ -58,7 +58,7 @@ public class ApiHandler {
     public static final String KEY_TEXT_HINT = "text_hint";
     public static final String KEY_TEXT_TASK = "text_task";
     public static final String KEY_TYPE = "type";
-    public static final String HEADER_TOKEN = "challenge_user_token";
+    public static final String HEADER_TOKEN = "CHALLENGEUSERTOKEN";
 
     final static String TAG = ApiHandler.class.getSimpleName();
     private final String serverUrl;
@@ -198,7 +198,9 @@ public class ApiHandler {
             @Override
             protected HttpRequest onPrepareRequest() {
                 String url = serverUrl + "/" + GAME_RESSOURCE;
-                return HttpRequest.get(url).header(HEADER_TOKEN, ApiHandler.this.authToken);
+                HttpRequest request = HttpRequest.get(url);
+                request.header(HEADER_TOKEN, ApiHandler.this.authToken);
+                return request;
             }
 
             @Override
@@ -236,7 +238,7 @@ public class ApiHandler {
                 contentLength += file.getName().getBytes().length;
                 contentLength += mimeType.getBytes().length;
                 contentLength += 128;
-                return HttpRequest.post(url).contentLength((int) contentLength).part("file", file.getName(), "image/jpg", file);
+                return HttpRequest.post(url).header(HEADER_TOKEN, ApiHandler.this.authToken).contentLength((int) contentLength).part("file", file.getName(), "image/jpg", file);
             }
 
 
