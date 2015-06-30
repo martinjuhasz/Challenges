@@ -18,6 +18,8 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.nostra13.universalimageloader.core.ImageLoader;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -121,7 +123,7 @@ public class PhotoChallengeActivity extends Activity{
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_TAKE_PHOTO && resultCode == RESULT_OK) {
             if(currentPhotoUri != null) {
-                setPic();
+                ImageLoader.getInstance().displayImage(currentPhotoUri.toString(), imageView);
                 btSubmit.setVisibility(View.VISIBLE);
             }
         }
@@ -168,40 +170,5 @@ public class PhotoChallengeActivity extends Activity{
                 storageDir      /* directory */
         );
         return image;
-    }
-
-    private void setPic() {
-        // Get the dimensions of the View
-        int targetW = imageView.getWidth();
-        int targetH = imageView.getHeight();
-
-        InputStream input = null;
-        try {
-            Uri photoUri = currentPhotoUri;
-            input = this.getContentResolver().openInputStream(photoUri);
-
-            // Get the dimensions of the bitmap
-            BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-            bmOptions.inJustDecodeBounds = true;
-            BitmapFactory.decodeStream(input, null, bmOptions);
-            input.close();
-            int photoW = bmOptions.outWidth;
-            int photoH = bmOptions.outHeight;
-
-            // Determine how much to scale down the image
-            int scaleFactor = Math.min(photoW/targetW, photoH/targetH);
-
-            // Decode the image file into a Bitmap sized to fill the View
-            bmOptions.inJustDecodeBounds = false;
-            bmOptions.inSampleSize = scaleFactor;
-
-            input = this.getContentResolver().openInputStream(photoUri);
-            Bitmap bitmap = BitmapFactory.decodeStream(input, null, bmOptions);
-            input.close();
-
-            imageView.setImageBitmap(bitmap);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 }

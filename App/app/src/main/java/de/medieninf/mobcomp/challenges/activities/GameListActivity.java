@@ -122,6 +122,9 @@ public class GameListActivity extends Activity implements GameServiceListener {
         int id = item.getItemId();
 
         if (id == R.id.action_settings) {
+            // TODO: Remove, just for testing
+            Intent rateIntent = new Intent(this, RateActivity.class);
+            startActivity(rateIntent);
             return true;
         }
 
