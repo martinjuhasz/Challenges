@@ -19,6 +19,27 @@ public class Database {
     private final Context context;
     private DBHelper dbHelper;
 
+    private class Rating {
+
+        private static final String TABLE = "ratings";
+        private static final String ID = "_id";
+        private static final String RATING = "rating";
+        private static final String CLIENT_RATING = "client_rating";
+        private static final String USER_ID = "user_id";
+        private static final String CHALLENGE_ID = "challenge_id";
+
+
+        public final static String CREATE_TABLE = "CREATE TABLE " + TABLE + "( "
+                + ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + RATING + " INTEGER, "
+                + CLIENT_RATING + " BOOLEAN NOT NULL, "
+                + USER_ID + " INTEGER, "
+                + CHALLENGE_ID + " INTEGER, "
+                + "FOREIGN KEY(" + CHALLENGE_ID + ") REFERENCES " + Challenge.TABLE + "(" + Challenge.ID + ") ON DELETE CASCADE, "
+                + "FOREIGN KEY(" + USER_ID + ") REFERENCES " + User.TABLE + "(" + User.ID + ") ON DELETE CASCADE "
+                + ")";
+    }
+
     public class Game {
 
         public static final String TABLE = "games";
@@ -106,6 +127,7 @@ public class Database {
         public static final String TABLE = "submissions";
         public static final String ID = "_id";
         public static final String CHALLENGE_ID = "challenge_id";
+        public static final String SUBMITTED = "submitted";
         public static final String USER_ID = "user_id";
         public static final String CONTENT_URI = "content_uri";
 
@@ -115,6 +137,7 @@ public class Database {
                         + CHALLENGE_ID + " INTEGER NOT NULL, "
                         + USER_ID + " INTEGER NOT NULL, "
                         + CONTENT_URI + " TEXT NOT NULL, "
+                        + SUBMITTED + " BOOLEAN, "
                         + "FOREIGN KEY(" + CHALLENGE_ID + ") REFERENCES " + Challenge.TABLE + "(" + Challenge.ID + ") ON DELETE CASCADE, "
                         + "FOREIGN KEY(" + USER_ID + ") REFERENCES " + User.TABLE + "(" + User.ID + ") ON DELETE CASCADE "
                         + ")";
@@ -133,6 +156,7 @@ public class Database {
             db.execSQL(UserGames.CREATE_TABLE);
             db.execSQL(Challenge.CREATE_TABLE);
             db.execSQL(Submission.CREATE_TABLE);
+            db.execSQL(Rating.CREATE_TABLE);
         }
 
         @Override
@@ -142,6 +166,7 @@ public class Database {
             db.execSQL("DROP TABLE IF EXISTS " + User.TABLE);
             db.execSQL("DROP TABLE IF EXISTS " + Game.TABLE);
             db.execSQL("DROP TABLE IF EXISTS " + Submission.TABLE);
+            db.execSQL("DROP TABLE IF EXISTS " + Rating.TABLE);
             onCreate(db);
         }
     }

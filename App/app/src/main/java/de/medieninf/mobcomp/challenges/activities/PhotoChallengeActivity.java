@@ -158,6 +158,8 @@ public class PhotoChallengeActivity extends Activity{
     private void submitClicked(){
         gameService.saveChallengeSubmission(challengeID, currentPhotoUri);
         PhotoChallengeActivity.this.finish();
+        Intent waitingIntent = new Intent(this, WaitingActivity.class);
+        startActivity(waitingIntent);
     }
 
     private File createImageFile() throws IOException {

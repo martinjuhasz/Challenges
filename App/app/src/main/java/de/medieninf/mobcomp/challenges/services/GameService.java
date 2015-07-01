@@ -19,6 +19,7 @@ import java.util.List;
 
 import de.medieninf.mobcomp.challenges.R;
 import de.medieninf.mobcomp.challenges.activities.PhotoChallengeActivity;
+import de.medieninf.mobcomp.challenges.activities.WaitingActivity;
 import de.medieninf.mobcomp.challenges.database.Database;
 import de.medieninf.mobcomp.challenges.database.DatabaseProviderFascade;
 import de.medieninf.mobcomp.challenges.services.api.ApiHandler;
@@ -43,6 +44,9 @@ public class GameService extends Service {
     public static final String TOKEN_KEY = "constant_usertoken";
     public static final String USER_ID_KEY = "constant_user_id";
     public static final String EXTRA_KEY_CHALLENGE_ID = "EXTRA_KEY_CHALLENGE_ID";
+    private static final int STATUS_PLAYING = 1;
+    private static final int STATUS_RATING = 2;
+    private static final int STATUS_FINISHED = 3;
 
     // instance variables
     final static String TAG = GameService.class.getSimpleName();
@@ -138,21 +142,40 @@ public class GameService extends Service {
         }
 
         int challengeID = challengeCursor.getInt(challengeCursor.getColumnIndex(Database.Challenge.ID));
-
-        // TODO: implement Submissions
-
-        // switch challenge type
+        int challengeStatus = challengeCursor.getInt(challengeCursor.getColumnIndex(Database.Challenge.STATUS));
         int challengeType = challengeCursor.getInt(challengeCursor.getColumnIndex(Database.Challenge.TYPE));
         challengeCursor.close();
+
+        Cursor submissionCursor = DatabaseProviderFascade.getSubmissionForChallenge(challengeID, this.contentResolver);
+
         Intent challengeIntent = null;
-        switch (challengeType) {
-            case 1:
-                challengeIntent = new Intent(this, PhotoChallengeActivity.class);
+
+        switch (challengeStatus){
+            case STATUS_PLAYING:
+                if(submissionCursor != null){
+                    submissionCursor.close();
+                    challengeIntent = new Intent(this, WaitingActivity.class);
+                }else{
+                    // switch challenge type
+                    switch (challengeType) {
+                        case 1:
+                            challengeIntent = new Intent(this, PhotoChallengeActivity.class);
+                            break;
+                        default:
+                            throw new RuntimeException("invalid challenge type");
+                    }
+                }
+                break;
+            case STATUS_RATING:
+                //TODO implement rating
+                throw new UnsupportedOperationException("Not yet implemented");
+                //show rating screen
+                //break;
+            case STATUS_FINISHED:
                 break;
             default:
-                throw new RuntimeException("invalid challenge type");
+                throw new RuntimeException("invalid Challenge Status type");
         }
-
 
         challengeIntent.putExtra(EXTRA_KEY_CHALLENGE_ID, challengeID);
         return challengeIntent;

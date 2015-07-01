@@ -12,8 +12,6 @@
         android:name=".ChallengesApplication"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
-
-
         <activity
             android:name=".activities.GameListActivity"
             android:label="@string/title_activity_game_list" >
@@ -25,9 +23,8 @@
         </activity>
         <activity
             android:name=".activities.LoginActivity"
-            android:noHistory="true"
             android:excludeFromRecents="true"
-            >
+            android:noHistory="true" >
         </activity>
         <activity android:name=".activities.PhotoChallengeActivity"></activity>
         <activity android:name=".activities.StartGameActivity"></activity>
@@ -39,6 +36,10 @@
             android:name=".database.DatabaseProvider"
             android:exported="false"></provider>
 
+        <activity
+            android:name=".activities.WaitingActivity"
+            android:label="@string/title_activity_waiting" >
+        </activity>
     </application>
 
 </manifest>

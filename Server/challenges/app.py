@@ -6,12 +6,14 @@ from flask import request, jsonify
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import exc
 from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import query
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.config.from_object('config.Config')
 db = SQLAlchemy(app)
 
+from challenges.models.db.game import Game
 from challenges.models.db.user import User
 from challenges.models.db.challenge import Challenge
 from challenges.models.db.challenge_task import ChallengeTask
@@ -231,7 +233,12 @@ def fill():
     game2.users.append(user2)
     game2.users.append(user3)
 
-    db.session.add_all([game1, game2])
+    game3 = game_controller.create_game("Game 3")
+    game3.users.append(user2)
+    game3.users.append(user3)
+    game3.current_challenge.status = Challenge.STATUS_RATING
+
+    db.session.add_all([game1, game2, game3])
     db.session.commit()
 
     return "db filled"

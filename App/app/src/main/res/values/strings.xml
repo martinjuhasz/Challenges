@@ -13,4 +13,6 @@
     <string name="photo_challenge_action">Foto machen</string>
     <string name="challenge_submit">absenden</string>
     <string name="action_startgame">Start Game</string>
+    <string name="title_activity_waiting">WAITING</string>
+    <string name="waiting_test_tv">WAITING</string>
 </resources>

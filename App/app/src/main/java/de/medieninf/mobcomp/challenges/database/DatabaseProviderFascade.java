@@ -174,7 +174,7 @@ public class DatabaseProviderFascade {
         gameCursor.close();
 
         Uri challengeUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.CHALLENGE_STRING).appendPath(String.valueOf(challengeID)).build();
-        Cursor challengeCursor = contentResolver.query(challengeUri, new String[]{Database.Challenge.ID, Database.Challenge.TYPE}, null, null, null);
+        Cursor challengeCursor = contentResolver.query(challengeUri, new String[]{Database.Challenge.ID, Database.Challenge.TYPE, Database.Challenge.STATUS}, null, null, null);
         challengeCursor.moveToFirst();
 
         // no current challenge exists for game
@@ -196,6 +196,27 @@ public class DatabaseProviderFascade {
             return null;
         }
         return challengeCursor;
+    }
+
+
+    //Submissions
+
+    public static Cursor getSubmissionForChallenge(int challengeID, ContentResolver contentResolver){
+        Uri submissionUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.SUBMISSION_STRING).build();
+
+        String [] projection = new String[]{Database.Submission.CHALLENGE_ID,Database.Submission.SUBMITTED};
+        String selection = Database.Submission.CHALLENGE_ID + " = ?";
+        String [] selectionArgs = new String[]{String.valueOf(challengeID)};
+
+        Cursor submissionCursor = contentResolver.query(submissionUri,projection,selection,selectionArgs,null);
+        submissionCursor.moveToFirst();
+
+        //if no submission found
+        if(submissionCursor.getCount()<=0){
+            submissionCursor.close();
+            return null;
+        }
+        return submissionCursor;
     }
 
 }
