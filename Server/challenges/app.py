@@ -120,10 +120,12 @@ def link_submission(challenge_id):
         return "", 403
 
     request_json = request.get_json(force=True, silent=True)
-    if not request_json or not request_json['oid']:
+    if not request_json or not request_json['oid'] or not request_json['filename'] or not request_json['mimetype']:
         return "", 400
 
     oid = request_json['oid']
+    filename = request_json['filename']
+    mimetype = request_json['mimetype']
 
     challenge = Challenge.query.filter_by(id = challenge_id).first()
 
@@ -132,6 +134,8 @@ def link_submission(challenge_id):
 
     media = Media.query.filter_by(oid=oid).first()
     media.challenge_id = challenge_id
+    media.filename = filename
+    media.mimetype = mimetype
 
     db.session.commit()
 
@@ -174,32 +178,31 @@ def binary(oid):
 
 @app.route('/binary', methods=['POST'])
 def binary_post():
-    """store a binary in the database returning its meta-data as json"""
-    uploaded_file = request.files['file']
+    """store a binary in the database returning its oid as json"""
 
     current_user = user_authenticated()
     if not current_user:
         return "", 403
 
-    filename = secure_filename(uploaded_file.filename)
-    mimetype = uploaded_file.mimetype
+    content_length = request.content_length
     con = db.engine.raw_connection()
     lob = con.lobject(0, "wb")
     oid = lob.oid
 
     binsize = 0
-    for chunk in read_in_chunks(uploaded_file):
+    for chunk in read_in_chunks(request.stream):
         binsize += len(chunk)
         lob.write(chunk)
 
-    uploaded_file.close()
     lob.close()
     con.commit()
     con.close()
 
-    media = Media(oid=oid, filename=filename, mimetype=mimetype, binsize=binsize, user_id = current_user.id)
-    db.session.add(media)
-    db.session.commit()
+    if(content_length == binsize):
+        media = Media(oid=oid, binsize=binsize, user_id=current_user.id)
+        db.session.add(media)
+        db.session.commit()
+
     return jsonify({'oid': oid})
 
 

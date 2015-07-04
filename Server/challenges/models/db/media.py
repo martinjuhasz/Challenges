@@ -7,7 +7,7 @@ class Media(db.Model):
     __tablename__ = 'media'
 
     oid = Column(OID, primary_key=True)
-    filename = Column(TEXT, nullable=False)
+    filename = Column(TEXT)
     mimetype = Column(TEXT)
     binsize = Column(INTEGER, nullable=False)
     user_id = db.Column(db.INTEGER, db.ForeignKey('users.id'))
