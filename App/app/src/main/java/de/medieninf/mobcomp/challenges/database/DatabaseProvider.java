@@ -34,7 +34,8 @@ public class DatabaseProvider extends ContentProvider {
     private static final int USERGAMES_ID = 5;
     private static final int CHALLENGE_ID = 6;
     private static final int CHALLENGES_ID = 7;
-    private static final int SUBMISSIONS_ID = 8;
+    private static final int SUBMISSION_ID = 8;
+    private static final int SUBMISSIONS_ID = 9;
 
     // URI Matcher
     private static final UriMatcher uriMatcher;
@@ -56,9 +57,9 @@ public class DatabaseProvider extends ContentProvider {
         uriMatcher.addURI(AUTHORITY, CHALLENGE_STRING, CHALLENGES_ID);
         uriMatcher.addURI(AUTHORITY, CHALLENGE_STRING+"/#", CHALLENGE_ID);
 
-        // /submissions
+        // /submissions /submissions/<id>
         uriMatcher.addURI(AUTHORITY, SUBMISSION_STRING, SUBMISSIONS_ID);
-
+        uriMatcher.addURI(AUTHORITY, SUBMISSION_STRING+"/#", SUBMISSION_ID);
     }
 
     private Database database;
@@ -111,6 +112,10 @@ public class DatabaseProvider extends ContentProvider {
                 return database.getDatabase().query(Database.Challenge.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
             case CHALLENGES_ID:
                 return database.getDatabase().query(Database.Challenge.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
+            case SUBMISSION_ID:
+                Integer submissions_id = extractID(uri);
+                selection = addId(selection, submissions_id, Database.Submission.ID);
+                return database.getDatabase().query(Database.Submission.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
             case SUBMISSIONS_ID:
                 return database.getDatabase().query(Database.Submission.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
         }
@@ -152,6 +157,7 @@ public class DatabaseProvider extends ContentProvider {
                     return null;
                 }
                 return CONTENT_URI.buildUpon().appendPath(CHALLENGE_STRING).appendPath(String.valueOf(challenge_id)).build();
+            case SUBMISSION_ID:
             case SUBMISSIONS_ID:
                 long submission_id = database.getDatabase().insertOrThrow(Database.Submission.TABLE, null, values);
                 if(submission_id == -1) {
@@ -184,6 +190,10 @@ public class DatabaseProvider extends ContentProvider {
                 return database.getDatabase().delete(Database.Challenge.TABLE, selection, selectionArgs);
             case CHALLENGES_ID:
                 return database.getDatabase().delete(Database.Challenge.TABLE, selection, selectionArgs);
+            case SUBMISSION_ID:
+                Integer submission_id = extractID(uri);
+                selection = addId(selection, submission_id, Database.Submission.ID);
+                return database.getDatabase().delete(Database.Submission.TABLE, selection, selectionArgs);
             case SUBMISSIONS_ID:
                 return database.getDatabase().delete(Database.Challenge.TABLE, selection, selectionArgs);
             default:
@@ -213,6 +223,12 @@ public class DatabaseProvider extends ContentProvider {
                 return database.getDatabase().update(Database.Challenge.TABLE, values, selection, selectionArgs);
             case CHALLENGES_ID:
                 return database.getDatabase().update(Database.Challenge.TABLE, values, selection, selectionArgs);
+            case SUBMISSION_ID:
+                Integer submission_id = extractID(uri);
+                selection = addId(selection, submission_id, Database.Submission.ID);
+                return database.getDatabase().update(Database.Submission.TABLE, values, selection, selectionArgs);
+            case SUBMISSIONS_ID:
+                return database.getDatabase().update(Database.Submission.TABLE, values, selection, selectionArgs);
             default:
                 return 0;
         }

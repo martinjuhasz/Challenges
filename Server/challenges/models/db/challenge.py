@@ -16,7 +16,7 @@ class Challenge(db.Model):
     status = Column(Integer, nullable=False)
     challenge_task_id = Column(db.Integer, db.ForeignKey('challenge_tasks.id'))
     game_id = Column(Integer, ForeignKey('games.id', name="fk_game_id_challenge", use_alter=True))
-
+    submissions = db.relationship('Media', lazy='dynamic')
 
     def to_dict(self):
         return {
@@ -24,6 +24,7 @@ class Challenge(db.Model):
             'type': self.task.type.id,
             'status': self.status,
             'text_hint': self.task.hint_text,
-            'text_task': self.task.task_text
+            'text_task': self.task.task_text,
+            'submissions': [submission.to_dict() for submission in self.submissions]
         }
 

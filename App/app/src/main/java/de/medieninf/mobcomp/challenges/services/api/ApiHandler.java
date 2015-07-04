@@ -5,23 +5,18 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.ParcelFileDescriptor;
 import android.preference.PreferenceManager;
-import android.provider.OpenableColumns;
 import android.util.Log;
+import android.webkit.MimeTypeMap;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
+import de.medieninf.mobcomp.challenges.database.Database;
 import de.medieninf.mobcomp.challenges.database.DatabaseProviderFascade;
 import de.medieninf.mobcomp.challenges.external.HttpRequest;
 import de.medieninf.mobcomp.challenges.services.GameService;
@@ -45,6 +40,8 @@ public class ApiHandler {
     public static final String USER_RESSOURCE = "users";
     public static final String GAME_RESSOURCE = "games";
     public static final String BINARY_RESSOURCE = "binary";
+    public static final String CHALLENGE_RESSOURCE = "challenge";
+    public static final String CHALLENGE_SUBMISSION_RESSOURCE = "submission";
     public static final String KEY_USERNAME = "username";
     public static final String KEY_TOKEN = "token";
     public static final String KEY_USER_ID = "id";
@@ -55,6 +52,8 @@ public class ApiHandler {
     public static final String KEY_USERS = "users";
     public static final String KEY_IMAGE = "image";
     public static final String KEY_CURRENT_CHALLENGE = "current_challenge";
+    public static final String KEY_SUBMISSIONS = "submissions";
+    public static final String KEY_OID = "oid";
     public static final String KEY_STATUS = "status";
     public static final String KEY_TEXT_HINT = "text_hint";
     public static final String KEY_TEXT_TASK = "text_task";
@@ -250,30 +249,130 @@ public class ApiHandler {
 //        asyncTask.execute();
 //    }
 
-    public void uploadBinary(final ApiHandlerCallback callback, int challengeId, final Uri location, final ContentResolver contentResolver){
+    public void uploadBinary(final ApiHandlerCallback callback, final int challengeId, final int userId, final Uri location, final ContentResolver contentResolver){
         SimpleAsyncTask asyncTask = new SimpleAsyncTask(callback){
             @Override
-            protected void doInBackground() throws ApiHandlerException {
-                String url = serverUrl + "/" + BINARY_RESSOURCE;
+            protected void doInBackground() throws ApiHandlerException, JSONException {
 
+                //save submission in local DB
                 File file = new File(location.getPath());
+                String filename = file.getName();
+                String extension = filename.substring(filename.lastIndexOf('.') + 1);
+                String mimetype = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
+
+                Uri submissionUri = DatabaseProviderFascade.saveSubmission(challengeId, userId, location, filename, mimetype, contentResolver);
+
+                //find not uploaded File
+                Cursor cursor = DatabaseProviderFascade.getNotUploadedSubmissions(contentResolver);
+
+                if(cursor != null){
+                    int submissionId = cursor.getInt(cursor.getColumnIndex(Database.Submission.ID));
+                    String contentUriPath = cursor.getString(cursor.getColumnIndex(Database.Submission.CONTENT_URI));
+                    Uri contentUri = Uri.parse(contentUriPath);
+                    cursor.close();
+
+                    file = new File(contentUri.getPath());
+                    filename = file.getName();
+                    extension = filename.substring(filename.lastIndexOf('.') + 1);
+                    mimetype = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
 
 
-                String testPart = "{test:'test'}";
-                String mimeType = "image/jpg";
-                Log.i(TAG, "file size: " + file.length() + ", name size: " + file.getName().getBytes().length);
-                long contentLength = file.length();
-                contentLength += file.getName().getBytes().length;
-                contentLength += mimeType.getBytes().length;
-                contentLength += 128;
-                HttpRequest request = HttpRequest.post(url).header(HEADER_TOKEN, ApiHandler.this.authToken).contentLength((int) contentLength).part("file", file.getName(), "image/jpg", file);
+                    //upload file to server
+                    String binaryUrl = serverUrl + "/" + BINARY_RESSOURCE;
+                    long contentLength = file.length();
+                    contentLength += filename.getBytes().length;
+                    contentLength += mimetype.getBytes().length;
+                    contentLength += 128;
+                    HttpRequest request = HttpRequest.post(binaryUrl).header(HEADER_TOKEN, ApiHandler.this.authToken).contentLength((int) contentLength).part("file", filename, mimetype, file);
+                    JSONObject jsonObject = requestJSON(request);
 
-                JSONObject jsonObject = requestJSON(request);
+                    //link oid and file
+                    if(jsonObject != null) {
+                        //save oid in local DB
+                        long oid = jsonObject.getLong(KEY_OID);
+                        DatabaseProviderFascade.setSubmissionOID(submissionId, oid, contentResolver);
+                    }
 
-                //Was mit der Response machen
+                    //link oid an file on server
+                    cursor = DatabaseProviderFascade.getUnlinkedSubmissions(contentResolver);
+
+                    if(cursor != null){
+                        int challengeId = cursor.getInt(cursor.getColumnIndex(Database.Submission.CHALLENGE_ID));
+                        long oid = cursor.getLong(cursor.getColumnIndex(Database.Submission.OID));
+                        filename = cursor.getString(cursor.getColumnIndex(Database.Submission.FILENAME));
+                        mimetype = cursor.getString(cursor.getColumnIndex(Database.Submission.MIMETYPE));
+
+
+                        String linkUrl = serverUrl + "/" + CHALLENGE_RESSOURCE + "/" + String.valueOf(challengeId) + "/" + CHALLENGE_SUBMISSION_RESSOURCE;
+                        Log.i(TAG, linkUrl);
+                        JSONObject payloadObject = new JSONObject();
+                        payloadObject.put(KEY_OID, oid);
+                        request = HttpRequest.post(linkUrl).header(HEADER_TOKEN, ApiHandler.this.authToken).send(payloadObject.toString());
+                        requestJSON(request);
+                    }
+
+
+
+                }
+
+
+
             }
         };
         asyncTask.execute();
+    }
+
+    private void uploadFile() throws ApiHandlerException, JSONException {
+        Cursor cursor = DatabaseProviderFascade.getNotUploadedSubmissions(contentResolver);
+
+        if(cursor != null) {
+            int submissionId = cursor.getInt(cursor.getColumnIndex(Database.Submission.ID));
+            String contentUriPath = cursor.getString(cursor.getColumnIndex(Database.Submission.CONTENT_URI));
+            Uri contentUri = Uri.parse(contentUriPath);
+            cursor.close();
+
+            File file = new File(contentUri.getPath());
+            String filename = file.getName();
+            String extension = filename.substring(filename.lastIndexOf('.') + 1);
+            String mimetype = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
+
+
+            //upload file to server
+            String binaryUrl = serverUrl + "/" + BINARY_RESSOURCE;
+            long contentLength = file.length();
+            contentLength += filename.getBytes().length;
+            contentLength += mimetype.getBytes().length;
+            contentLength += 128;
+            HttpRequest request = HttpRequest.post(binaryUrl).header(HEADER_TOKEN, ApiHandler.this.authToken).contentLength((int) contentLength).part("file", filename, mimetype, file);
+            JSONObject jsonObject = requestJSON(request);
+
+            //link oid and file
+            if (jsonObject != null) {
+                //save oid in local DB
+                long oid = jsonObject.getLong(KEY_OID);
+                DatabaseProviderFascade.setSubmissionOID(submissionId, oid, contentResolver);
+            }
+        }
+    }
+
+    private void linkFile() throws JSONException, ApiHandlerException {
+        //link oid an file on server
+        Cursor cursor = DatabaseProviderFascade.getUnlinkedSubmissions(contentResolver);
+
+        if(cursor != null){
+            int challengeId = cursor.getInt(cursor.getColumnIndex(Database.Submission.CHALLENGE_ID));
+            long oid = cursor.getLong(cursor.getColumnIndex(Database.Submission.OID));
+            String filename = cursor.getString(cursor.getColumnIndex(Database.Submission.FILENAME));
+            String mimetype = cursor.getString(cursor.getColumnIndex(Database.Submission.MIMETYPE));
+
+
+            String linkUrl = serverUrl + "/" + CHALLENGE_RESSOURCE + "/" + String.valueOf(challengeId) + "/" + CHALLENGE_SUBMISSION_RESSOURCE;
+            Log.i(TAG, linkUrl);
+            JSONObject payloadObject = new JSONObject();
+            payloadObject.put(KEY_OID, oid);
+            HttpRequest request = HttpRequest.post(linkUrl).header(HEADER_TOKEN, ApiHandler.this.authToken).send(payloadObject.toString());
+            requestJSON(request);
+        }
     }
 
     private void saveGame(JSONObject gameObject) throws JSONException {
@@ -307,6 +406,24 @@ public class ApiHandler {
             int challengeId = Integer.valueOf(challengeUri.getLastPathSegment());
             DatabaseProviderFascade.setCurrentChallengeToGame(challengeId, gameId, ApiHandler.this.contentResolver);
         }
+
+        // Add Submissions
+//        JSONArray submissions = gameObject.getJSONArray(KEY_SUBMISSIONS);
+//        JSONObject submission;
+//        int oid;
+//        String filename;
+//        String mimetype;
+//
+//        for (int i = 0; i < submissions.length(); i++){
+//            submission = submissions.getJSONObject(i);
+//
+//        }
+
+//        "binsize": 126485,
+//                "filename": "IMG_20150629_143356_1658813437.jpg",
+//                "mimetype": "image/jpg",
+//                "oid": 17738,
+//                "user_id": 2
     }
 
     private JSONObject requestJSON(HttpRequest request) throws ApiHandlerException{
@@ -320,9 +437,6 @@ public class ApiHandler {
                 }
 
                 JSONObject jsonObject = new JSONObject(response);
-                if (jsonObject == null) {
-                    return null;
-                }
 
                 ErrorCode errorCode = getErrorCode(jsonObject);
 

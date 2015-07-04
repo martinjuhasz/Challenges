@@ -130,6 +130,10 @@ public class Database {
         public static final String SUBMITTED = "submitted";
         public static final String USER_ID = "user_id";
         public static final String CONTENT_URI = "content_uri";
+        public static final String MIMETYPE = "mimetype";
+        public static final String FILENAME = "filename";
+        public static final String OID = "oid";
+        public static final String LINKED = "linked";
 
         private static final String CREATE_TABLE =
                 "CREATE TABLE " + TABLE + "( "
@@ -138,6 +142,10 @@ public class Database {
                         + USER_ID + " INTEGER NOT NULL, "
                         + CONTENT_URI + " TEXT NOT NULL, "
                         + SUBMITTED + " BOOLEAN, "
+                        + MIMETYPE + " TEXT NOT NULL, "
+                        + FILENAME + " TEXT NOT NULL, "
+                        + OID + " INTEGER, "
+                        + LINKED + " BOOLEAN DEFAULT 0 , "
                         + "FOREIGN KEY(" + CHALLENGE_ID + ") REFERENCES " + Challenge.TABLE + "(" + Challenge.ID + ") ON DELETE CASCADE, "
                         + "FOREIGN KEY(" + USER_ID + ") REFERENCES " + User.TABLE + "(" + User.ID + ") ON DELETE CASCADE "
                         + ")";

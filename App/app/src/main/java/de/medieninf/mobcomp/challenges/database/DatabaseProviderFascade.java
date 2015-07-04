@@ -102,15 +102,55 @@ public class DatabaseProviderFascade {
     }
 
 
-    public static Uri saveSubmission(int challengeId, int userId, Uri contentUri, ContentResolver contentResolver) {
+    public static Uri saveSubmission(int challengeId, int userId, Uri contentUri, String filename, String mimetype, ContentResolver contentResolver) {
         Uri submissionUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.SUBMISSION_STRING).build();
         Uri savedUri = null;
         ContentValues values = new ContentValues();
         values.put(Database.Submission.CHALLENGE_ID, challengeId);
         values.put(Database.Submission.USER_ID, userId);
         values.put(Database.Submission.CONTENT_URI, contentUri.toString());
+        values.put(Database.Submission.FILENAME, filename);
+        values.put(Database.Submission.MIMETYPE, mimetype);
         savedUri = contentResolver.insert(submissionUri, values);
         return savedUri;
+    }
+
+    public static int setSubmissionLinked(int submissionId, ContentResolver contentResolver){
+        Uri submissionUri = DatabaseProvider.CONTENT_URI.buildUpon().appendEncodedPath(DatabaseProvider.SUBMISSION_STRING).appendPath(String.valueOf(submissionId)).build();
+        ContentValues values = new ContentValues();
+        values.put(Database.Submission.LINKED, 1);
+        return contentResolver.update(submissionUri, values, null, null);
+    }
+
+    public static int setSubmissionOID(int submissionId, long oid, ContentResolver contentResolver) {
+        Uri submissionUri = DatabaseProvider.CONTENT_URI.buildUpon().appendEncodedPath(DatabaseProvider.SUBMISSION_STRING).appendPath(String.valueOf(submissionId)).build();
+        ContentValues values = new ContentValues();
+        values.put(Database.Submission.OID, oid);
+        return contentResolver.update(submissionUri, values, null, null);
+    }
+
+    public static Cursor getNotUploadedSubmissions(ContentResolver contentResolver){
+        Uri submissionUris = DatabaseProvider.CONTENT_URI.buildUpon().appendEncodedPath(DatabaseProvider.SUBMISSION_STRING).build();
+        String selection = Database.Submission.OID + " is null";
+        Cursor submissionCursor = contentResolver.query(submissionUris, new String[]{Database.Submission.ID, Database.Submission.CONTENT_URI}, selection, null, null);
+        submissionCursor.moveToFirst();
+        if(submissionCursor.getCount() <= 0){
+            return null;
+        }
+
+        return submissionCursor;
+    }
+
+    public static Cursor getUnlinkedSubmissions(ContentResolver contentResolver){
+        Uri submissionUris = DatabaseProvider.CONTENT_URI.buildUpon().appendEncodedPath(DatabaseProvider.SUBMISSION_STRING).build();
+        String selection = Database.Submission.LINKED + " = 0";
+        Cursor submissionCursor = contentResolver.query(submissionUris, new String[]{Database.Submission.CHALLENGE_ID, Database.Submission.OID, Database.Submission.FILENAME, Database.Submission.MIMETYPE, Database.Submission.LINKED}, selection, null, null);
+        submissionCursor.moveToFirst();
+        if(submissionCursor.getCount() <= 0){
+            return null;
+        }
+
+        return submissionCursor;
     }
 
     public static Uri addUserToGame(int user_id, int game_id, ContentResolver contentResolver) {

@@ -11,6 +11,7 @@ import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.webkit.MimeTypeMap;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -208,8 +209,6 @@ public class GameService extends Service {
     }
 
     public void saveChallengeSubmission(int challengeId, Uri location) {
-        DatabaseProviderFascade.saveSubmission(challengeId, this.userId, location, this.contentResolver);
-
         apiHandler.uploadBinary(new ApiHandlerCallback() {
             @Override
             public void requestFinished() {
@@ -220,7 +219,7 @@ public class GameService extends Service {
             public void requestFailed(ApiHandler.ErrorCode errorCode) {
                 Log.i(TAG, "save submission request failed: " + errorCode);
             }
-        }, challengeId, location, getContentResolver());
+        }, challengeId, this.userId, location, getContentResolver());
     }
 
     public void updateGames() {
@@ -253,4 +252,5 @@ public class GameService extends Service {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         this.userId = sharedPreferences.getInt(USER_ID_KEY, 0);
     }
+
 }
