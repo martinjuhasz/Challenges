@@ -11,6 +11,7 @@ import android.os.Process;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
+import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -65,7 +66,9 @@ public class GameService extends Service {
         this.binder = new GameServiceBinder();
         this.contentResolver = getContentResolver();
         String serverUrl = getString(R.string.constant_server_url);
-        this.uploadManager = new UploadManager(Process.THREAD_PRIORITY_BACKGROUND, serverUrl, this.userToken, this.contentResolver);
+
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        this.uploadManager = new UploadManager(Process.THREAD_PRIORITY_BACKGROUND, serverUrl, this.userToken, storageDir, this.contentResolver);
         this.apiHandler = new ApiHandler(serverUrl, this, this.userToken, uploadManager, this.contentResolver);
         this.listeners = new ArrayList<>();
 

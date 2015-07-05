@@ -167,6 +167,25 @@ public class DatabaseProviderFascade {
         return submissionCursor;
     }
 
+    public static Cursor getNotDownloadedSubmissions(ContentResolver contentResolver){
+        Uri submissionUris = DatabaseProvider.CONTENT_URI.buildUpon().appendEncodedPath(DatabaseProvider.SUBMISSION_STRING).build();
+        String selection = Database.Submission.CONTENT_URI + " is null";
+        Cursor submissionCursor = contentResolver.query(submissionUris, new String[]{Database.Submission.ID, Database.Submission.OID, Database.Submission.MIMETYPE}, selection, null, null);
+        submissionCursor.moveToFirst();
+        if(submissionCursor.getCount() <= 0){
+            return null;
+        }
+
+        return submissionCursor;
+    }
+
+    public static int setSubmissionContentUri(int submissionId, Uri contentUri, ContentResolver contentResolver){
+        Uri submissionUri = DatabaseProvider.CONTENT_URI.buildUpon().appendEncodedPath(DatabaseProvider.SUBMISSION_STRING).appendPath(String.valueOf(submissionId)).build();
+        ContentValues values = new ContentValues();
+        values.put(Database.Submission.CONTENT_URI, contentUri.toString());
+        return contentResolver.update(submissionUri, values, null, null);
+    }
+
     public static Cursor getUnlinkedSubmissions(ContentResolver contentResolver){
         Uri submissionUris = DatabaseProvider.CONTENT_URI.buildUpon().appendEncodedPath(DatabaseProvider.SUBMISSION_STRING).build();
         String selection = Database.Submission.LINKED + " = 0";

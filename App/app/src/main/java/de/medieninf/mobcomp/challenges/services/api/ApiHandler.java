@@ -3,7 +3,6 @@ package de.medieninf.mobcomp.challenges.services.api;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -16,7 +15,6 @@ import org.json.JSONObject;
 import java.io.File;
 import java.util.List;
 
-import de.medieninf.mobcomp.challenges.database.Database;
 import de.medieninf.mobcomp.challenges.database.DatabaseProviderFascade;
 import de.medieninf.mobcomp.challenges.external.HttpRequest;
 import de.medieninf.mobcomp.challenges.services.GameService;
@@ -230,7 +228,7 @@ public class ApiHandler {
     public void uploadBinary(final ApiHandlerCallback callback, final int challengeId, final int userId, final Uri location){
         SimpleAsyncTask asyncTask = new SimpleAsyncTask(callback){
             @Override
-            protected void doInBackground() throws ApiHandlerException, JSONException {
+            protected void doInBackground() {
 
                 //save submission in local DB
                 File file = new File(location.getPath());
@@ -240,7 +238,7 @@ public class ApiHandler {
 
                 DatabaseProviderFascade.saveSubmission(challengeId, userId, location, filename, mimetype, ApiHandler.this.contentResolver);
 
-                uploadManager.notifySubmission();
+                uploadManager.notifySubmissionUpload();
             }
         };
         asyncTask.execute();
@@ -294,6 +292,7 @@ public class ApiHandler {
 
                 //TODO challengeId oder challenge_server_id?
                 DatabaseProviderFascade.saveReceivedSubmission(challenge_server_id, userId, oid, filename, mimetype, ApiHandler.this.contentResolver);
+                uploadManager.notifySubmissionDownload();
             }
         }
 
