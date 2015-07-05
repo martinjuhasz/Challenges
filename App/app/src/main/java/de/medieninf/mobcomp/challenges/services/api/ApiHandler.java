@@ -65,15 +65,17 @@ public class ApiHandler {
     final static String TAG = ApiHandler.class.getSimpleName();
     private final String serverUrl;
     private final Context context;
+    private final UploadManager uploadManager;
     private String authToken;
     private ContentResolver contentResolver;
 
 
-    public ApiHandler(String serverUrl, Context context, String authToken, ContentResolver contentResolver) {
+    public ApiHandler(String serverUrl, Context context, String authToken, UploadManager uploadManager, ContentResolver contentResolver) {
         this.serverUrl = serverUrl;
         this.context = context;
         this.authToken = authToken;
         this.contentResolver = contentResolver;
+        this.uploadManager = uploadManager;
     }
 
     public void setAuthToken(String authToken) {
@@ -224,32 +226,6 @@ public class ApiHandler {
         asyncTask.execute();
     }
 
-//    public void uploadBinary(final ApiHandlerCallback callback, int challengeId, final Uri location, final ContentResolver contentResolver){
-//        ApiHandlerAsyncTask asyncTask = new ApiHandlerAsyncTask(callback) {
-//            @Override
-//            protected HttpRequest onPrepareRequest() {
-//                String url = serverUrl + "/" + BINARY_RESSOURCE;
-//
-//                File file = new File(location.getPath());
-//
-//
-//                String testPart = "{test:'test'}";
-//                String mimeType = "image/jpg";
-//                Log.i(TAG, "file size: " + file.length() + ", name size: " + file.getName().getBytes().length);
-//                long contentLength = file.length();
-//                contentLength += file.getName().getBytes().length;
-//                contentLength += mimeType.getBytes().length;
-//                contentLength += 128;
-//                return HttpRequest.post(url).header(HEADER_TOKEN, ApiHandler.this.authToken).contentLength((int) contentLength).part("file", file.getName(), "image/jpg", file);
-//            }
-//
-//            @Override
-//            protected boolean onDataReceived(JSONObject returnObject) {
-//                return super.onDataReceived(returnObject);
-//            }
-//        };
-//        asyncTask.execute();
-//    }
 
     public void uploadBinary(final ApiHandlerCallback callback, final int challengeId, final int userId, final Uri location){
         SimpleAsyncTask asyncTask = new SimpleAsyncTask(callback){
@@ -264,61 +240,10 @@ public class ApiHandler {
 
                 DatabaseProviderFascade.saveSubmission(challengeId, userId, location, filename, mimetype, ApiHandler.this.contentResolver);
 
-                uploadFile();
-                linkFile();
+                uploadManager.notifySubmission();
             }
         };
         asyncTask.execute();
-    }
-
-    private void uploadFile() throws ApiHandlerException, JSONException {
-        Cursor cursor = DatabaseProviderFascade.getNotUploadedSubmissions(contentResolver);
-
-        if(cursor != null) {
-            int submissionId = cursor.getInt(cursor.getColumnIndex(Database.Submission.ID));
-            String contentUriPath = cursor.getString(cursor.getColumnIndex(Database.Submission.CONTENT_URI));
-            Uri contentUri = Uri.parse(contentUriPath);
-            cursor.close();
-
-            File file = new File(contentUri.getPath());
-
-            //upload file to server
-            String binaryUrl = serverUrl + "/" + BINARY_RESSOURCE;
-            int contentLength = (int) file.length();
-            HttpRequest request = HttpRequest.post(binaryUrl).header(HEADER_TOKEN, ApiHandler.this.authToken).contentLength(contentLength).send(file);
-            JSONObject jsonObject = requestJSON(request);
-
-            //link oid and file
-            if (jsonObject != null) {
-                //save oid in local DB
-                long oid = jsonObject.getLong(KEY_OID);
-                DatabaseProviderFascade.setSubmissionOID(submissionId, oid, contentResolver);
-            }
-        }
-    }
-
-    private void linkFile() throws JSONException, ApiHandlerException {
-        //link oid an file on server
-        Cursor cursor = DatabaseProviderFascade.getUnlinkedSubmissions(contentResolver);
-
-        if(cursor != null){
-            int submissionId = cursor.getInt(cursor.getColumnIndex(Database.Submission.ID));
-            int challengeId = cursor.getInt(cursor.getColumnIndex(Database.Submission.CHALLENGE_ID));
-            long oid = cursor.getLong(cursor.getColumnIndex(Database.Submission.OID));
-            String filename = cursor.getString(cursor.getColumnIndex(Database.Submission.FILENAME));
-            String mimetype = cursor.getString(cursor.getColumnIndex(Database.Submission.MIMETYPE));
-            cursor.close();
-
-            String linkUrl = serverUrl + "/" + CHALLENGE_RESSOURCE + "/" + String.valueOf(challengeId) + "/" + CHALLENGE_SUBMISSION_RESSOURCE;
-            Log.i(TAG, linkUrl);
-            JSONObject payloadObject = new JSONObject();
-            payloadObject.put(KEY_OID, oid);
-            payloadObject.put(KEY_FILENAME, filename);
-            payloadObject.put(KEY_MIMETYPE, mimetype);
-            HttpRequest request = HttpRequest.post(linkUrl).header(HEADER_TOKEN, ApiHandler.this.authToken).send(payloadObject.toString());
-            requestJSON(request);
-            DatabaseProviderFascade.setSubmissionLinked(submissionId, contentResolver);
-        }
     }
 
     private void saveGame(JSONObject gameObject) throws JSONException {
@@ -372,64 +297,5 @@ public class ApiHandler {
             }
         }
 
-
-
-//        "binsize": 126485,
-//                "filename": "IMG_20150629_143356_1658813437.jpg",
-//                "mimetype": "image/jpg",
-//                "oid": 17738,
-//                "user_id": 2
-    }
-
-    private JSONObject requestJSON(HttpRequest request) throws ApiHandlerException{
-        try {
-            if (request != null && request.ok()) {
-
-                // extract response json object if needed
-                String response = request.body();
-                if (response.trim().isEmpty()) {
-                    return null;
-                }
-
-                JSONObject jsonObject = new JSONObject(response);
-
-                ErrorCode errorCode = getErrorCode(jsonObject);
-
-                if(errorCode != null){
-                    throw new ApiHandlerException(errorCode);
-                }
-
-
-                return jsonObject;
-            } else {
-                throw new ApiHandlerException(ErrorCode.FAILED_REQUEST);
-            }
-
-        } catch (HttpRequest.HttpRequestException exception) {
-            exception.printStackTrace();
-            throw new ApiHandlerException(ErrorCode.FAILED_REQUEST);
-        } catch (JSONException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    private ErrorCode getErrorCode(JSONObject jsonObject) {
-        // response body is empty or not an jsonobject
-        if (jsonObject == null) {
-            return null;
-        }
-
-        if(!jsonObject.has("error_code")) {
-            return null;
-        }
-
-        try {
-            int errorCode = jsonObject.getInt("error_code");
-            // TODO: implement conversion from web error codes into enum values
-            return null;
-        } catch (JSONException e) {
-            return null;
-        }
     }
 }

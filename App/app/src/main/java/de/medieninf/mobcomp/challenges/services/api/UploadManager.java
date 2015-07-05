@@ -23,6 +23,7 @@ public class UploadManager extends HandlerThread{
 
     private static final int UPLOAD_FILE = 0;
     private static final int LINK_FILE = 1;
+    private static final String NAME = "UploadManager";
 
     private ContentResolver contentResolver;
     private String serverUrl;
@@ -35,10 +36,12 @@ public class UploadManager extends HandlerThread{
     private Handler.Callback handlerCallback = new Handler.Callback() {
         @Override
         public boolean handleMessage(Message msg) {
+            boolean handled = false;
             switch (msg.what){
                 case UPLOAD_FILE:
                     uploadFile();
                     sendLinkFile();
+                    handled = true;
                     break;
                 case LINK_FILE:
                     linkFile();
@@ -47,14 +50,15 @@ public class UploadManager extends HandlerThread{
                     } else if(moreToLink) {
                         sendLinkFile();
                     }
+                    handled = true;
                     break;
             }
-            return false;
+            return handled;
         }
     };
 
-    public UploadManager(String name, int priority, String serverUrl, String authToken, ContentResolver contentResolver) {
-        super(name, priority);
+    public UploadManager(int priority, String serverUrl, String authToken, ContentResolver contentResolver) {
+        super(NAME, priority);
         this.serverUrl = serverUrl;
         this.authToken = authToken;
         this.contentResolver = contentResolver;
@@ -112,9 +116,12 @@ public class UploadManager extends HandlerThread{
                     }
                 }
             } catch (HttpRequest.HttpRequestException e){
+                //TODO exponential backoff
                 e.printStackTrace();
+                moreToUpload = false;
             } catch (JSONException e){
                 e.printStackTrace();
+                moreToUpload = false;
             }
         } else {
             moreToUpload = false;
@@ -151,8 +158,10 @@ public class UploadManager extends HandlerThread{
                 }
             } catch (HttpRequest.HttpRequestException e){
                 e.printStackTrace();
+                moreToLink = false;
             } catch (JSONException e){
                 e.printStackTrace();
+                moreToLink = false;
             }
         } else {
             moreToLink = false;

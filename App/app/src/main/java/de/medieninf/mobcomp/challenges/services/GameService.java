@@ -6,8 +6,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Binder;
-import android.os.IBinder;
+import android.os.*;
+import android.os.Process;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
@@ -23,6 +23,7 @@ import de.medieninf.mobcomp.challenges.database.Database;
 import de.medieninf.mobcomp.challenges.database.DatabaseProviderFascade;
 import de.medieninf.mobcomp.challenges.services.api.ApiHandler;
 import de.medieninf.mobcomp.challenges.services.api.ApiHandlerCallback;
+import de.medieninf.mobcomp.challenges.services.api.UploadManager;
 
 /**
  * Created by Martin Juhasz on 06/06/15.
@@ -52,6 +53,7 @@ public class GameService extends Service {
     private IBinder binder;
     private String userToken;
     private int userId;
+    private UploadManager uploadManager;
     private ApiHandler apiHandler;
     private ContentResolver contentResolver;
     private List<WeakReference<GameServiceListener>> listeners;
@@ -62,14 +64,19 @@ public class GameService extends Service {
 
         this.binder = new GameServiceBinder();
         this.contentResolver = getContentResolver();
-        this.apiHandler = new ApiHandler(getString(R.string.constant_server_url), this, this.userToken, this.contentResolver);
+        String serverUrl = getString(R.string.constant_server_url);
+        this.uploadManager = new UploadManager(Process.THREAD_PRIORITY_BACKGROUND, serverUrl, this.userToken, this.contentResolver);
+        this.apiHandler = new ApiHandler(serverUrl, this, this.userToken, uploadManager, this.contentResolver);
         this.listeners = new ArrayList<>();
 
         this.gameController = new GameController(this.apiHandler, this, this.contentResolver);
 
+        uploadManager.start();
         setUserTokenFromPreferences();
         setUserIdFromPreferences();
     }
+
+
 
     public GameController getGameController() {
         return gameController;
@@ -131,6 +138,11 @@ public class GameService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return this.binder;
+    }
+
+    @Override
+    public void onDestroy() {
+        uploadManager.quit();
     }
 
     public Intent getIntentForChallengeActivity(int gameID) {
@@ -242,6 +254,9 @@ public class GameService extends Service {
         String prefUserToken = sharedPreferences.getString(TOKEN_KEY, null);
         if (prefUserToken != null) {
             this.userToken = prefUserToken;
+            if(this.uploadManager != null) {
+                this.uploadManager.setAuthToken(this.userToken);
+            }
             if (this.apiHandler != null) {
                 this.apiHandler.setAuthToken(this.userToken);
             }
