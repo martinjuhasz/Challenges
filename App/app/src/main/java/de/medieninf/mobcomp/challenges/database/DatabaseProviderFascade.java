@@ -115,6 +115,32 @@ public class DatabaseProviderFascade {
         return savedUri;
     }
 
+    public static Uri saveReceivedSubmission(int challengeId, int userId, long oid, String filename, String mimetype, ContentResolver contentResolver){
+        Uri submissionUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.SUBMISSION_STRING).build();
+        String selection = Database.Submission.CHALLENGE_ID + " = ? AND " + Database.Submission.USER_ID + " = ?";
+        String [] selectionArgs = new String[]{String.valueOf(challengeId), String.valueOf(userId)};
+        Cursor existsCursor = contentResolver.query(submissionUri, new String[]{Database.User.ID}, selection, selectionArgs, null);
+        existsCursor.moveToFirst();
+        Uri savedUri = null;
+
+        if(existsCursor.getCount() <= 0) {
+            ContentValues values = new ContentValues();
+            values.put(Database.Submission.CHALLENGE_ID, challengeId);
+            values.put(Database.Submission.USER_ID, userId);
+            values.put(Database.Submission.OID, oid);
+            values.put(Database.Submission.FILENAME, filename);
+            values.put(Database.Submission.MIMETYPE, mimetype);
+            values.put(Database.Submission.LINKED, 1);
+            savedUri = contentResolver.insert(submissionUri, values);
+        } else {
+            Log.i(TAG, "Submission already exists");
+
+        }
+        existsCursor.close();
+
+        return savedUri;
+    }
+
     public static int setSubmissionLinked(int submissionId, ContentResolver contentResolver){
         Uri submissionUri = DatabaseProvider.CONTENT_URI.buildUpon().appendEncodedPath(DatabaseProvider.SUBMISSION_STRING).appendPath(String.valueOf(submissionId)).build();
         ContentValues values = new ContentValues();
@@ -144,7 +170,7 @@ public class DatabaseProviderFascade {
     public static Cursor getUnlinkedSubmissions(ContentResolver contentResolver){
         Uri submissionUris = DatabaseProvider.CONTENT_URI.buildUpon().appendEncodedPath(DatabaseProvider.SUBMISSION_STRING).build();
         String selection = Database.Submission.LINKED + " = 0";
-        Cursor submissionCursor = contentResolver.query(submissionUris, new String[]{Database.Submission.CHALLENGE_ID, Database.Submission.OID, Database.Submission.FILENAME, Database.Submission.MIMETYPE, Database.Submission.LINKED}, selection, null, null);
+        Cursor submissionCursor = contentResolver.query(submissionUris, new String[]{Database.Submission.ID, Database.Submission.CHALLENGE_ID, Database.Submission.OID, Database.Submission.FILENAME, Database.Submission.MIMETYPE, Database.Submission.LINKED}, selection, null, null);
         submissionCursor.moveToFirst();
         if(submissionCursor.getCount() <= 0){
             return null;

@@ -9,9 +9,7 @@ import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
-import android.webkit.MimeTypeMap;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -178,7 +176,9 @@ public class GameService extends Service {
                 throw new RuntimeException("invalid Challenge Status type");
         }
 
-        challengeIntent.putExtra(EXTRA_KEY_CHALLENGE_ID, challengeID);
+        if (challengeIntent != null) {
+            challengeIntent.putExtra(EXTRA_KEY_CHALLENGE_ID, challengeID);
+        }
         return challengeIntent;
     }
 
@@ -219,7 +219,7 @@ public class GameService extends Service {
             public void requestFailed(ApiHandler.ErrorCode errorCode) {
                 Log.i(TAG, "save submission request failed: " + errorCode);
             }
-        }, challengeId, this.userId, location, getContentResolver());
+        }, challengeId, this.userId, location);
     }
 
     public void updateGames() {

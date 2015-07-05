@@ -140,7 +140,7 @@ public class Database {
                         + ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
                         + CHALLENGE_ID + " INTEGER NOT NULL, "
                         + USER_ID + " INTEGER NOT NULL, "
-                        + CONTENT_URI + " TEXT NOT NULL, "
+                        + CONTENT_URI + " TEXT, "
                         + SUBMITTED + " BOOLEAN, "
                         + MIMETYPE + " TEXT NOT NULL, "
                         + FILENAME + " TEXT NOT NULL, "

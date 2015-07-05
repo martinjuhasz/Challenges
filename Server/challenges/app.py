@@ -87,7 +87,7 @@ def create_user():
         # TODO: REMOVE!! only temp login
         db.session.rollback()
         user = User.query.filter_by(username=request_json['username']).first()
-        return jsonify({'id': user.id, 'token': user.token})
+        return jsonify({'user_id': user.id, 'token': user.token})
 
         # return jsonify({'error_code': "USER_TAKEN"})
 
