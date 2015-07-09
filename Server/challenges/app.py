@@ -127,8 +127,6 @@ def get_rating(challenge_id):
     for entry in ratings:
         placing[entry.oid] = placing.get(entry.oid, 0) + entry.rating
 
-    placing = {"bob":4, "alcice":2, "charlie":3, "donald":7}
-
     sortedPlacing = sorted(placing.iteritems(), key=operator.itemgetter(1))
     sortedOids = [entry[0] for entry in sortedPlacing]
 
