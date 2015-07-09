@@ -6,8 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -22,7 +20,6 @@ import com.nostra13.universalimageloader.core.ImageLoader;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -44,8 +41,7 @@ public class PhotoChallengeActivity extends Activity{
     private SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault());
     private File storageDir;
 
-    private int challengeID;
-    private Cursor challenge;
+    private int serverChallengeID;
     private ImageView imageView;
 
     //Services
@@ -69,15 +65,16 @@ public class PhotoChallengeActivity extends Activity{
         if (getIntent().getExtras() == null) {
             throw new RuntimeException("challenge id must be given to display PhotoChallengeActivity");
         }
-        challengeID = getIntent().getExtras().getInt(GameService.EXTRA_KEY_CHALLENGE_ID);
-        this.challenge = DatabaseProviderFascade.getChallenge(challengeID, getContentResolver());
-        if (this.challenge == null) {
+        int challengeID = getIntent().getExtras().getInt(GameService.EXTRA_KEY_CHALLENGE_ID);
+        Cursor challengeCursor = DatabaseProviderFascade.getChallenge(challengeID, getContentResolver());
+        if (challengeCursor == null) {
             throw new RuntimeException("challenge id must be given to display PhotoChallengeActivity");
         }
 
-        taskTextView.setText(this.challenge.getString(this.challenge.getColumnIndex(Database.Challenge.TEXT_TASK)));
+        this.serverChallengeID = challengeCursor.getInt(challengeCursor.getColumnIndex(Database.Challenge.SERVER_ID));
+        taskTextView.setText(challengeCursor.getString(challengeCursor.getColumnIndex(Database.Challenge.TEXT_TASK)));
 
-        challenge.close();
+        challengeCursor.close();
 
         Button btTakePhoto = (Button) findViewById(R.id.bt_photo_challenge_action);
         btSubmit = (Button) findViewById(R.id.bt_photo_challenge_submit);
@@ -156,7 +153,7 @@ public class PhotoChallengeActivity extends Activity{
     }
 
     private void submitClicked(){
-        gameService.saveChallengeSubmission(challengeID, currentPhotoUri);
+        gameService.saveChallengeSubmission(serverChallengeID, currentPhotoUri);
         PhotoChallengeActivity.this.finish();
         Intent waitingIntent = new Intent(this, WaitingActivity.class);
         startActivity(waitingIntent);

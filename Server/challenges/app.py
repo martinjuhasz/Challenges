@@ -1,13 +1,12 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+import operator
 
 from flask import Flask, Response, stream_with_context
 from flask import request, jsonify
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import exc
 from sqlalchemy.exc import OperationalError
-from sqlalchemy.orm import query
-from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.config.from_object('config.Config')
@@ -19,6 +18,7 @@ from challenges.models.db.challenge import Challenge
 from challenges.models.db.challenge_task import ChallengeTask
 from challenges.models.db.challenge_type import ChallengeType
 from challenges.models.db.media import Media
+from challenges.models.db.rating import Rating
 from controller.game_controller import GameController
 
 game_controller = GameController(db)
@@ -62,6 +62,7 @@ def games():
         return "", 400
 
     game = game_controller.create_game(title)
+    game.users.append(current_user)
     for user_id in users_ids:
         user = User.query.filter_by(id=user_id).first()
         game.users.append(user)
@@ -108,6 +109,74 @@ def find_user():
 
     return jsonify({'id': user.id, 'username': user.username, 'image': None})
 
+@app.route('/challenge/<int:challenge_id>/ratings', methods=["GET"])
+def get_rating(challenge_id):
+    current_user = user_authenticated()
+    if not current_user:
+        return "", 403
+
+    challenge = Challenge.query.filter_by(id = challenge_id).first()
+
+    if not challenge:
+        return "", 403
+
+
+    placing = {}
+    ratings = Rating.query.filter_by(challenge_id = challenge_id).all()
+
+    for entry in ratings:
+        placing[entry.oid] = placing.get(entry.oid, 0) + entry.rating
+
+    placing = {"bob":4, "alcice":2, "charlie":3, "donald":7}
+
+    sortedPlacing = sorted(placing.iteritems(), key=operator.itemgetter(1))
+    sortedOids = [entry[0] for entry in sortedPlacing]
+
+    retList = []
+    for idx, oid in enumerate(sortedOids, start=1):
+        retList.append({"oid":oid, "rating":idx})
+
+    return jsonify({'data': retList})
+
+@app.route('/challenge/<int:challenge_id>/ratings', methods=["POST"])
+def submit_rating(challenge_id):
+    current_user = user_authenticated()
+    if not current_user:
+        return "", 403
+
+    challenge = Challenge.query.filter_by(id = challenge_id).first()
+
+    if not challenge:
+        return "", 403
+
+    request_json = request.get_json(force=True, silent=True)
+    if not request_json or not 'ratings' in request_json:
+        return "", 400
+
+    ratings = request_json['ratings']
+
+    try:
+        added = False
+        for entry in ratings:
+            if 'oid' in entry and 'rating' in entry:
+                oid = entry['oid']
+                rating = entry['rating']
+
+                rating = Rating(user_id=current_user.id, challenge_id=challenge_id, oid=oid, rating=rating)
+                db.session.add(rating)
+                added = True
+            else:
+                if added:
+                    db.session.rollback()
+
+                return "", 403
+        db.session.commit()
+    except exc.IntegrityError:
+        db.session.rollback()
+        return "", 403
+
+    return jsonify()
+
 @app.route('/challenge/<int:challenge_id>/submissions', methods=["GET"])
 def challenge_submissions(challenge_id):
     submissions = Media.query.filter_by(challenge_id = challenge_id).all()
@@ -138,6 +207,15 @@ def link_submission(challenge_id):
     media.mimetype = mimetype
 
     db.session.commit()
+
+
+    game = Game.query.filter_by(id = challenge.game_id).first()
+    user_count = len(game.users)
+    submission_count = challenge.submissions.count()
+
+    if user_count == submission_count:
+        challenge.status = Challenge.STATUS_RATING
+        db.session.commit()
 
     return jsonify()
 

@@ -246,7 +246,7 @@ public class DatabaseProviderFascade {
 
     public static Cursor getChallengeForGame(int gameID, ContentResolver contentResolver) {
         Uri gameUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.GAME_STRING).build();
-        Cursor gameCursor = contentResolver.query(gameUri, new String[]{Database.Game.ID, Database.Game.CURRENT_CHALLENGE_ID}, Database.Game.SERVER_ID + " = ?", new String[]{String.valueOf(gameID)}, null);
+        Cursor gameCursor = contentResolver.query(gameUri, new String[]{Database.Game.ID, Database.Game.CURRENT_CHALLENGE_ID}, Database.Game.ID + " = ?", new String[]{String.valueOf(gameID)}, null);
         gameCursor.moveToFirst();
 
         // invalid gameID
@@ -273,7 +273,7 @@ public class DatabaseProviderFascade {
 
     public static Cursor getChallenge(int challengeID, ContentResolver contentResolver) {
         Uri challengeUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.CHALLENGE_STRING).appendPath(String.valueOf(challengeID)).build();
-        Cursor challengeCursor = contentResolver.query(challengeUri, new String[]{Database.Challenge.ID, Database.Challenge.TEXT_HINT, Database.Challenge.TEXT_TASK}, null, null, null);
+        Cursor challengeCursor = contentResolver.query(challengeUri, new String[]{Database.Challenge.ID, Database.Challenge.TEXT_HINT, Database.Challenge.TEXT_TASK, Database.Challenge.SERVER_ID}, null, null, null);
         challengeCursor.moveToFirst();
 
         // no current challenge exists for game
