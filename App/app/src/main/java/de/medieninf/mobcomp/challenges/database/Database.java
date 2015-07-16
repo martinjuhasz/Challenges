@@ -134,6 +134,7 @@ public class Database {
         public static final String FILENAME = "filename";
         public static final String OID = "oid";
         public static final String LINKED = "linked";
+        public static final String ORDER = "ordering";
 
         private static final String CREATE_TABLE =
                 "CREATE TABLE " + TABLE + "( "
@@ -146,6 +147,7 @@ public class Database {
                         + FILENAME + " TEXT NOT NULL, "
                         + OID + " INTEGER, "
                         + LINKED + " BOOLEAN DEFAULT 0 , "
+                        + ORDER  + " INTEGER NOT NULL, "
                         + "FOREIGN KEY(" + CHALLENGE_ID + ") REFERENCES " + Challenge.TABLE + "(" + Challenge.ID + ") ON DELETE CASCADE, "
                         + "FOREIGN KEY(" + USER_ID + ") REFERENCES " + User.TABLE + "(" + User.ID + ") ON DELETE CASCADE "
                         + ")";

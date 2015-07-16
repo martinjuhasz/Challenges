@@ -65,19 +65,25 @@ public class ApiHandler {
     private final Context context;
     private final UploadManager uploadManager;
     private String authToken;
+    private int userID;
     private ContentResolver contentResolver;
 
 
-    public ApiHandler(String serverUrl, Context context, String authToken, UploadManager uploadManager, ContentResolver contentResolver) {
+    public ApiHandler(String serverUrl, Context context, String authToken, int userID, UploadManager uploadManager, ContentResolver contentResolver) {
         this.serverUrl = serverUrl;
         this.context = context;
         this.authToken = authToken;
         this.contentResolver = contentResolver;
         this.uploadManager = uploadManager;
+        this.userID = userID;
     }
 
     public void setAuthToken(String authToken) {
         this.authToken = authToken;
+    }
+
+    public void setUserID(int userID) {
+        this.userID = userID;
     }
 
     public void createUser(final String username, final ApiHandlerCallback callback) {
@@ -236,7 +242,7 @@ public class ApiHandler {
                 String extension = filename.substring(filename.lastIndexOf('.') + 1);
                 String mimetype = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
 
-                DatabaseProviderFascade.saveSubmission(challengeId, userId, location, filename, mimetype, ApiHandler.this.contentResolver);
+                DatabaseProviderFascade.saveSubmission(challengeId, userId, ApiHandler.this.userID, location, filename, mimetype, ApiHandler.this.contentResolver);
 
                 uploadManager.notifySubmissionUpload();
             }
@@ -291,7 +297,7 @@ public class ApiHandler {
                 mimetype = submission.getString(KEY_MIMETYPE);
 
                 //TODO challengeId oder challenge_server_id?
-                DatabaseProviderFascade.saveReceivedSubmission(challenge_server_id, userId, oid, filename, mimetype, ApiHandler.this.contentResolver);
+                DatabaseProviderFascade.saveReceivedSubmission(challenge_server_id, userId, ApiHandler.this.userID, oid, filename, mimetype, ApiHandler.this.contentResolver);
                 uploadManager.notifySubmissionDownload();
             }
         }

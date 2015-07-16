@@ -27,6 +27,8 @@ public class DatabaseProvider extends ContentProvider {
     public static final String USERGAMES_STRING = "usergames";
     public static final String CHALLENGE_STRING = "challenges";
     public static final String SUBMISSION_STRING = "submissions";
+    public static final String SUBMISSION_INCREMENT_ORDER_STRING = "increment";
+    public static final String SUBMISSION_DECREMENT_ORDER_STRING = "decrement";
     private static final int GAMES_ID = 1;
     private static final int GAME_ID = 2;
     private static final int USER_ID = 3;
@@ -35,7 +37,9 @@ public class DatabaseProvider extends ContentProvider {
     private static final int CHALLENGE_ID = 6;
     private static final int CHALLENGES_ID = 7;
     private static final int SUBMISSION_ID = 8;
-    private static final int SUBMISSIONS_ID = 9;
+    private static final int SUBMISSION_INCREMENT_ID = 9;
+    private static final int SUBMISSION_DECREMENT_ID = 10;
+    private static final int SUBMISSIONS_ID = 11;
 
     // URI Matcher
     private static final UriMatcher uriMatcher;
@@ -59,6 +63,8 @@ public class DatabaseProvider extends ContentProvider {
 
         // /submissions /submissions/<id>
         uriMatcher.addURI(AUTHORITY, SUBMISSION_STRING, SUBMISSIONS_ID);
+        uriMatcher.addURI(AUTHORITY, SUBMISSION_STRING + "/" + SUBMISSION_INCREMENT_ORDER_STRING, SUBMISSION_INCREMENT_ID);
+        uriMatcher.addURI(AUTHORITY, SUBMISSION_STRING + "/" + SUBMISSION_DECREMENT_ORDER_STRING, SUBMISSION_DECREMENT_ID);
         uriMatcher.addURI(AUTHORITY, SUBMISSION_STRING+"/#", SUBMISSION_ID);
     }
 
@@ -117,7 +123,9 @@ public class DatabaseProvider extends ContentProvider {
                 selection = addId(selection, submissions_id, Database.Submission.ID);
                 return database.getDatabase().query(Database.Submission.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
             case SUBMISSIONS_ID:
-                return database.getDatabase().query(Database.Submission.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
+                Cursor cursor = database.getDatabase().query(Database.Submission.TABLE, projection, selection, selectionArgs, null, null, sortOrder);
+                cursor.setNotificationUri(getContext().getContentResolver(), uri);
+                return cursor;
         }
         Log.e(TAG, "query, no matching uri " + uri);
         return null;
@@ -229,9 +237,23 @@ public class DatabaseProvider extends ContentProvider {
                 return database.getDatabase().update(Database.Submission.TABLE, values, selection, selectionArgs);
             case SUBMISSIONS_ID:
                 return database.getDatabase().update(Database.Submission.TABLE, values, selection, selectionArgs);
+            case SUBMISSION_INCREMENT_ID:
+                database.getDatabase().execSQL(getSQLForSubmissionOrderUpdate(true, selection), selectionArgs);
+                getContext().getContentResolver().notifyChange(uri, null);
+                return 1;
+            case SUBMISSION_DECREMENT_ID:
+                database.getDatabase().execSQL(getSQLForSubmissionOrderUpdate(false, selection), selectionArgs);
+                getContext().getContentResolver().notifyChange(uri, null);
+                return 1;
             default:
                 return 0;
         }
+    }
+
+    private String getSQLForSubmissionOrderUpdate(boolean increment, String selection) {
+        String inc = (increment) ? "+ 1":  "- 1";
+        String sql = "UPDATE " + Database.Submission.TABLE + " SET " + Database.Submission.ORDER + " = " + Database.Submission.ORDER + " " + inc + " WHERE " + selection;
+        return sql;
     }
 
     private Integer extractID(Uri uri) {

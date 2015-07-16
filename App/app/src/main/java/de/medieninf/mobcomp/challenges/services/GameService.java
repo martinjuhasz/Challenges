@@ -19,6 +19,7 @@ import java.util.List;
 
 import de.medieninf.mobcomp.challenges.R;
 import de.medieninf.mobcomp.challenges.activities.PhotoChallengeActivity;
+import de.medieninf.mobcomp.challenges.activities.RateActivity;
 import de.medieninf.mobcomp.challenges.activities.WaitingActivity;
 import de.medieninf.mobcomp.challenges.database.Database;
 import de.medieninf.mobcomp.challenges.database.DatabaseProviderFascade;
@@ -67,16 +68,17 @@ public class GameService extends Service {
         this.contentResolver = getContentResolver();
         String serverUrl = getString(R.string.constant_server_url);
 
+        setUserTokenFromPreferences();
+        setUserIdFromPreferences();
+
         File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
         this.uploadManager = new UploadManager(Process.THREAD_PRIORITY_BACKGROUND, serverUrl, this.userToken, storageDir, this.contentResolver);
-        this.apiHandler = new ApiHandler(serverUrl, this, this.userToken, uploadManager, this.contentResolver);
+        this.apiHandler = new ApiHandler(serverUrl, this, this.userToken, this.userId, uploadManager, this.contentResolver);
         this.listeners = new ArrayList<>();
 
         this.gameController = new GameController(this.apiHandler, this, this.contentResolver);
 
         uploadManager.start();
-        setUserTokenFromPreferences();
-        setUserIdFromPreferences();
     }
 
 
@@ -161,40 +163,36 @@ public class GameService extends Service {
         challengeCursor.close();
 
         Cursor submissionCursor = DatabaseProviderFascade.getSubmissionForChallenge(challengeID, this.contentResolver);
-
-        Intent challengeIntent = null;
+        if(submissionCursor != null) {
+            submissionCursor.close();
+        }
 
         switch (challengeStatus){
             case STATUS_PLAYING:
                 if(submissionCursor != null){
-                    submissionCursor.close();
-                    challengeIntent = new Intent(this, WaitingActivity.class);
+                    Intent waitIntent = new Intent(this, WaitingActivity.class);
+                    return waitIntent;
                 }else{
                     // switch challenge type
                     switch (challengeType) {
                         case 1:
-                            challengeIntent = new Intent(this, PhotoChallengeActivity.class);
-                            break;
+                            Intent challengeIntent = new Intent(this, PhotoChallengeActivity.class);
+                            challengeIntent.putExtra(EXTRA_KEY_CHALLENGE_ID, challengeID);
+                            return challengeIntent;
                         default:
                             throw new RuntimeException("invalid challenge type");
                     }
                 }
-                break;
             case STATUS_RATING:
-                //TODO implement rating
-                throw new UnsupportedOperationException("Not yet implemented");
-                //show rating screen
-                //break;
+                Intent rateIntent = new Intent(this, RateActivity.class);
+                rateIntent.putExtra(EXTRA_KEY_CHALLENGE_ID, challengeID);
+                return rateIntent;
             case STATUS_FINISHED:
                 break;
             default:
                 throw new RuntimeException("invalid Challenge Status type");
         }
-
-        if (challengeIntent != null) {
-            challengeIntent.putExtra(EXTRA_KEY_CHALLENGE_ID, challengeID);
-        }
-        return challengeIntent;
+        return null;
     }
 
     public boolean isUserLoggedIn() {
@@ -203,6 +201,10 @@ public class GameService extends Service {
 
     public String getUserToken() {
         return userToken;
+    }
+
+    public int getUserId() {
+        return userId;
     }
 
     public void submitUserRegistration(String username) {
@@ -268,7 +270,10 @@ public class GameService extends Service {
 
     private void setUserIdFromPreferences() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-        this.userId = sharedPreferences.getInt(USER_ID_KEY, 0);
+        this.userId = sharedPreferences.getInt(USER_ID_KEY, -1);
+        if (this.apiHandler != null) {
+            this.apiHandler.setUserID(this.userId);
+        }
     }
 
 }

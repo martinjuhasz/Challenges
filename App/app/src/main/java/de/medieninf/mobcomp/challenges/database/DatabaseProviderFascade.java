@@ -1,14 +1,14 @@
 package de.medieninf.mobcomp.challenges.database;
 
-import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.content.ContentValues;
-import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteConstraintException;
-import android.database.sqlite.SQLiteException;
 import android.net.Uri;
 import android.util.Log;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by Martin Juhasz on 10/06/15.
@@ -102,20 +102,24 @@ public class DatabaseProviderFascade {
     }
 
 
-    public static Uri saveSubmission(int challengeId, int userId, Uri contentUri, String filename, String mimetype, ContentResolver contentResolver) {
+    public static Uri saveSubmission(int challengeId, int userId, int localUser, Uri contentUri, String filename, String mimetype, ContentResolver contentResolver) {
+
         Uri submissionUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.SUBMISSION_STRING).build();
         Uri savedUri = null;
+        int count = (userId == localUser) ? -1 : getExternalSubmissionCountForChallenge(challengeId, localUser, contentResolver);
+
         ContentValues values = new ContentValues();
         values.put(Database.Submission.CHALLENGE_ID, challengeId);
         values.put(Database.Submission.USER_ID, userId);
         values.put(Database.Submission.CONTENT_URI, contentUri.toString());
         values.put(Database.Submission.FILENAME, filename);
         values.put(Database.Submission.MIMETYPE, mimetype);
+        values.put(Database.Submission.ORDER, count);
         savedUri = contentResolver.insert(submissionUri, values);
         return savedUri;
     }
 
-    public static Uri saveReceivedSubmission(int challengeId, int userId, long oid, String filename, String mimetype, ContentResolver contentResolver){
+    public static Uri saveReceivedSubmission(int challengeId, int userId, int localUser, long oid, String filename, String mimetype, ContentResolver contentResolver){
         Uri submissionUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.SUBMISSION_STRING).build();
         String selection = Database.Submission.CHALLENGE_ID + " = ? AND " + Database.Submission.USER_ID + " = ?";
         String [] selectionArgs = new String[]{String.valueOf(challengeId), String.valueOf(userId)};
@@ -124,6 +128,8 @@ public class DatabaseProviderFascade {
         Uri savedUri = null;
 
         if(existsCursor.getCount() <= 0) {
+            int count =  (userId == localUser) ? -1 : getExternalSubmissionCountForChallenge(challengeId, localUser, contentResolver);
+
             ContentValues values = new ContentValues();
             values.put(Database.Submission.CHALLENGE_ID, challengeId);
             values.put(Database.Submission.USER_ID, userId);
@@ -131,6 +137,7 @@ public class DatabaseProviderFascade {
             values.put(Database.Submission.FILENAME, filename);
             values.put(Database.Submission.MIMETYPE, mimetype);
             values.put(Database.Submission.LINKED, 1);
+            values.put(Database.Submission.ORDER, count);
             savedUri = contentResolver.insert(submissionUri, values);
         } else {
             Log.i(TAG, "Submission already exists");
@@ -139,6 +146,60 @@ public class DatabaseProviderFascade {
         existsCursor.close();
 
         return savedUri;
+    }
+
+    public static int getExternalSubmissionCountForChallenge(int challengeId, int userID, ContentResolver contentResolver) {
+        Uri submissionUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.SUBMISSION_STRING).build();
+        String selection = Database.Submission.CHALLENGE_ID + " = ? AND " + Database.Submission.USER_ID + " != ?";
+        String [] selectionArgs = new String[]{String.valueOf(challengeId), String.valueOf(userID)};
+        Cursor existsCursor = contentResolver.query(submissionUri, new String[]{Database.Submission.ID}, selection, selectionArgs, null);
+        existsCursor.moveToFirst();
+        int count = existsCursor.getCount();
+        existsCursor.close();
+        return count;
+    }
+
+    public static void submissionOrderChanged(int submissionId, int fromOrder, int toOrder, ContentResolver contentResolver) {
+        if (fromOrder == toOrder) {
+            return;
+        }
+
+        Uri submissionUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.SUBMISSION_STRING).build();
+        String querySelection = Database.Submission.ID + " = ?";
+        String [] querySelectionArgs = new String[]{String.valueOf(submissionId)};
+        Cursor existsCursor = contentResolver.query(submissionUri, new String[]{Database.Submission.ID, Database.Submission.CHALLENGE_ID}, querySelection, querySelectionArgs, null);
+        existsCursor.moveToFirst();
+        int challengeId = existsCursor.getInt(existsCursor.getColumnIndex(Database.Submission.CHALLENGE_ID));
+        existsCursor.close();
+
+
+        // first traverse up or down the order lis
+        String selection = Database.Submission.CHALLENGE_ID + " = ? AND " + Database.Submission.ORDER + " BETWEEN ? AND ?";
+        List<String> selectionArgsList = new ArrayList<String>();
+        selectionArgsList.add(String.valueOf(challengeId));
+        //String [] selectionArgs = new String[]{String.valueOf(challengeId)};
+
+        if (fromOrder > toOrder) {
+            submissionUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.SUBMISSION_STRING).appendPath(DatabaseProvider.SUBMISSION_INCREMENT_ORDER_STRING).build();
+            selectionArgsList.add(String.valueOf(toOrder));
+            selectionArgsList.add(String.valueOf(fromOrder-1));
+        } else {
+            submissionUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.SUBMISSION_STRING).appendPath(DatabaseProvider.SUBMISSION_DECREMENT_ORDER_STRING).build();
+            selectionArgsList.add(String.valueOf(fromOrder+1));
+            selectionArgsList.add(String.valueOf(toOrder));
+        }
+
+        String[] selectionArgs = new String[selectionArgsList.size()];
+        selectionArgs = selectionArgsList.toArray(selectionArgs);
+        int updatedTraverse = contentResolver.update(submissionUri, null, selection, selectionArgs);
+
+        // then update the moved item position
+        submissionUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.SUBMISSION_STRING).build();
+        selection = Database.Submission.ID + " = ?";
+        selectionArgs = new String[]{String.valueOf(submissionId)};
+        ContentValues values = new ContentValues();
+        values.put(Database.Submission.ORDER, toOrder);
+        int updated = contentResolver.update(submissionUri, values, selection, selectionArgs);
     }
 
     public static int setSubmissionLinked(int submissionId, ContentResolver contentResolver){

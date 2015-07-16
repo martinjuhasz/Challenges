@@ -22,24 +22,28 @@ public class SubmissionsListLoader implements LoaderManager.LoaderCallbacks<Curs
     final static int ID = 2;
 
     private Uri submissionsUri;
-    private CursorAdapter adapter;
+    private DraggableSubmissionsAdapter adapter;
     private Context context;
     private String[] projection;
     private String selection;
     private String[] selectionArgs;
+    private int challengeID;
+    private int userID;
 
-    public SubmissionsListLoader(CursorAdapter adapter, Context context){
+    public SubmissionsListLoader(DraggableSubmissionsAdapter adapter, Context context, int challengeID, int userID){
         this.adapter = adapter;
         this.context = context;
+        this.challengeID = challengeID;
+        this.userID = userID;
         this.projection = new String[]{Database.Submission.ID, Database.Submission.USER_ID, Database.Submission.CONTENT_URI};
         this.submissionsUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.SUBMISSION_STRING).build();
-        this.selection = null;
-        this.selectionArgs = null;
+        this.selection = Database.Submission.CHALLENGE_ID + " = ? AND " + Database.Submission.USER_ID + " != ?";
+        this.selectionArgs = new String[] {String.valueOf(challengeID), String.valueOf(userID)};
     }
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        CursorLoader loader = new CursorLoader(context, submissionsUri, projection, selection, selectionArgs, null);
+        CursorLoader loader = new CursorLoader(context, submissionsUri, projection, selection, selectionArgs, Database.Submission.ORDER);
         return loader;
     }
 
