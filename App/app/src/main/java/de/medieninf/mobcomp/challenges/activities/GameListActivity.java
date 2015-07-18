@@ -172,4 +172,9 @@ public class GameListActivity extends Activity implements GameServiceListener {
     public void gamesUpdated(boolean successfully) {
         getLoaderManager().restartLoader(GameListLoader.ID, null, loader);
     }
+
+    @Override
+    public void ratingSent(boolean successfully) {
+
+    }
 }

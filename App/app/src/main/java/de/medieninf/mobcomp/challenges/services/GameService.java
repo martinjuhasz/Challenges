@@ -127,6 +127,18 @@ public class GameService extends Service {
         }
     }
 
+    private void callListenerRatingSent(boolean successfully) {
+        for (Iterator<WeakReference<GameServiceListener>> iterator = this.listeners.iterator(); iterator.hasNext(); ) {
+            WeakReference<GameServiceListener> weakRef = iterator.next();
+            // clean empty refs when already iterating
+            if (weakRef.get() == null) {
+                iterator.remove();
+                continue;
+            }
+            weakRef.get().ratingSent(successfully);
+        }
+    }
+
     private void callListenerGamesUpdated(boolean successfully) {
         for (Iterator<WeakReference<GameServiceListener>> iterator = this.listeners.iterator(); iterator.hasNext(); ) {
             WeakReference<GameServiceListener> weakRef = iterator.next();
@@ -237,6 +249,20 @@ public class GameService extends Service {
                 Log.i(TAG, "save submission request failed: " + errorCode);
             }
         }, challengeId, this.userId, location);
+    }
+
+    public void submitChallengeRating(int challengeId) {
+        apiHandler.submitChallengeRating(challengeId, this.userId, new ApiHandlerCallback() {
+            @Override
+            public void requestFinished() {
+                callListenerRatingSent(true);
+            }
+
+            @Override
+            public void requestFailed(ApiHandler.ErrorCode errorCode) {
+                callListenerRatingSent(false);
+            }
+        });
     }
 
     public void updateGames() {

@@ -3,6 +3,7 @@ package de.medieninf.mobcomp.challenges.services.api;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -15,6 +16,7 @@ import org.json.JSONObject;
 import java.io.File;
 import java.util.List;
 
+import de.medieninf.mobcomp.challenges.database.Database;
 import de.medieninf.mobcomp.challenges.database.DatabaseProviderFascade;
 import de.medieninf.mobcomp.challenges.external.HttpRequest;
 import de.medieninf.mobcomp.challenges.services.GameService;
@@ -40,11 +42,14 @@ public class ApiHandler {
     public static final String BINARY_RESSOURCE = "binary";
     public static final String CHALLENGE_RESSOURCE = "challenge";
     public static final String CHALLENGE_SUBMISSION_RESSOURCE = "submission";
+    public static final String SUBMIT_RATINGS_RESSOURCE = "challenge/%d/ratings";
     public static final String KEY_USERNAME = "username";
     public static final String KEY_TOKEN = "token";
     public static final String KEY_USER_ID = "user_id";
     public static final String KEY_DATA = "data";
     public static final String KEY_ID = "id";
+    public static final String KEY_RATING = "rating";
+    public static final String KEY_RATINGS = "ratings";
     public static final String KEY_TITLE = "title";
     public static final String KEY_GAME_ROUNDS = "game_rounds";
     public static final String KEY_USERS = "users";
@@ -245,6 +250,47 @@ public class ApiHandler {
                 DatabaseProviderFascade.saveSubmission(challengeId, userId, ApiHandler.this.userID, location, filename, mimetype, ApiHandler.this.contentResolver);
 
                 uploadManager.notifySubmissionUpload();
+            }
+        };
+        asyncTask.execute();
+    }
+
+    public void submitChallengeRating(final int challengeId, final int userId, final ApiHandlerCallback callback) {
+        ApiHandlerAsyncTask asyncTask = new ApiHandlerAsyncTask(callback) {
+            @Override
+            protected HttpRequest onPrepareRequest() {
+                // build url
+                String url = serverUrl + "/" + String.format(SUBMIT_RATINGS_RESSOURCE, challengeId);
+
+                try {
+                    // build json payload
+                    JSONObject payloadObject = new JSONObject();
+                    Cursor submissionsCursor = DatabaseProviderFascade.getExternalSubmissionsForChallenge(challengeId, userId, ApiHandler.this.contentResolver);
+                    JSONArray submissionArray = new JSONArray();
+                    while (!submissionsCursor.isAfterLast()) {
+                        int oid = submissionsCursor.getInt(submissionsCursor.getColumnIndex(Database.Submission.OID));
+                        int rating = submissionsCursor.getInt(submissionsCursor.getColumnIndex(Database.Submission.ORDER));
+
+                        JSONObject submission = new JSONObject();
+                        submission.put(KEY_OID, oid);
+                        submission.put(KEY_RATING, rating);
+                        submissionArray.put(submission);
+
+                        submissionsCursor.moveToNext();
+                    }
+
+                    payloadObject.put(KEY_RATINGS, submissionArray);
+                    return HttpRequest.post(url).header(HEADER_TOKEN, ApiHandler.this.authToken).send(payloadObject.toString());
+
+                } catch (JSONException e) {
+                    callback.requestFailed(ErrorCode.INVALID_PAYLOAD);
+                    return null;
+                }
+            }
+
+            @Override
+            protected boolean onDataReceived(JSONObject returnObject) {
+                return true;
             }
         };
         asyncTask.execute();

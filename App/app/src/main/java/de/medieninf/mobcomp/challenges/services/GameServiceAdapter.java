@@ -11,4 +11,9 @@ public abstract class GameServiceAdapter implements GameServiceListener {
     public void gamesUpdated(boolean successfully) {
 
     }
+
+    @Override
+    public void ratingSent(boolean successfully) {
+
+    }
 }

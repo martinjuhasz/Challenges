@@ -6,7 +6,14 @@
     <android.support.v7.widget.RecyclerView
         android:id="@+id/rv_rate_submissions"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/rate_list_rate_button"
+        android:id="@+id/btn_rate"/>
 
 </LinearLayout>

@@ -9,4 +9,6 @@ public interface GameServiceListener {
 
     public void gamesUpdated(boolean successfully);
 
+    public void ratingSent(boolean successfully);
+
 }

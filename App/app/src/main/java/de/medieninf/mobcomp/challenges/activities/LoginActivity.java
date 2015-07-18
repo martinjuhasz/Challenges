@@ -113,4 +113,9 @@ public class LoginActivity extends Activity implements GameServiceListener {
     public void gamesUpdated(boolean successfully) {
 
     }
+
+    @Override
+    public void ratingSent(boolean successfully) {
+
+    }
 }

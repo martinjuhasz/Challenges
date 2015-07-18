@@ -15,4 +15,5 @@
     <string name="action_startgame">Start Game</string>
     <string name="title_activity_waiting">WAITING</string>
     <string name="waiting_test_tv">WAITING</string>
+    <string name="rate_list_rate_button">Bewerten</string>
 </resources>

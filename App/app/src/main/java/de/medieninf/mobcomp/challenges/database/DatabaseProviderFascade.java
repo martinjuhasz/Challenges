@@ -148,6 +148,16 @@ public class DatabaseProviderFascade {
         return savedUri;
     }
 
+    public static Cursor getExternalSubmissionsForChallenge(int challengeId, int userID, ContentResolver contentResolver) {
+        Uri submissionUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.SUBMISSION_STRING).build();
+        String selection = Database.Submission.CHALLENGE_ID + " = ? AND " + Database.Submission.USER_ID + " != ?";
+        String [] selectionArgs = new String[]{String.valueOf(challengeId), String.valueOf(userID)};
+        String [] projection = new String[]{Database.Submission.ID, Database.Submission.ORDER, Database.Submission.OID};
+        Cursor existsCursor = contentResolver.query(submissionUri, projection, selection, selectionArgs, null);
+        existsCursor.moveToFirst();
+        return existsCursor;
+    }
+
     public static int getExternalSubmissionCountForChallenge(int challengeId, int userID, ContentResolver contentResolver) {
         Uri submissionUri = DatabaseProvider.CONTENT_URI.buildUpon().appendPath(DatabaseProvider.SUBMISSION_STRING).build();
         String selection = Database.Submission.CHALLENGE_ID + " = ? AND " + Database.Submission.USER_ID + " != ?";
